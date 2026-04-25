@@ -43,7 +43,7 @@ def main() -> None:
     # 3. 安装 Python 依赖
     print("\n[3/6] 安装 Python 依赖...")
     run([str(venv_python), "-m", "pip", "install", "--upgrade", "pip"])
-    run([str(venv_python), "-m", "pip", "install", "-r", str(ROOT / "backend" / "requirements.txt")])
+    run([str(venv_python), "-m", "noglob", "pip", "install", "-r", str(ROOT / "backend" / "requirements.txt")])
 
     # 4. 初始化数据库
     print("\n[4/6] 初始化数据库...")

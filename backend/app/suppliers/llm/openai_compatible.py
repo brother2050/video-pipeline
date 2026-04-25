@@ -25,6 +25,7 @@ class OpenAICompatibleAdapter(LLMBaseSupplier):
         api_key: str,
         provider_name: str = "openai_compatible",
         is_local: bool = False,
+        model: str = "gpt-3.5-turbo",
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
@@ -35,6 +36,7 @@ class OpenAICompatibleAdapter(LLMBaseSupplier):
             headers={"Authorization": f"Bearer {self._api_key}"},
             timeout=120.0,
         )
+        self._model = model
 
     async def chat(
         self,
@@ -46,7 +48,7 @@ class OpenAICompatibleAdapter(LLMBaseSupplier):
     ) -> str:
         """Non-streaming chat completion."""
         payload: dict[str, Any] = {
-            "model": model,
+            "model": model or self._model,
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -68,7 +70,7 @@ class OpenAICompatibleAdapter(LLMBaseSupplier):
     ) -> AsyncGenerator[str, None]:
         """Streaming chat completion via SSE."""
         payload: dict[str, Any] = {
-            "model": model,
+            "model": model or self._model,
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -97,7 +99,7 @@ class OpenAICompatibleAdapter(LLMBaseSupplier):
         t0 = _time.monotonic()
         try:
             payload: dict[str, Any] = {
-                "model": "gpt-3.5-turbo",
+                "model": self._model,
                 "messages": [{"role": "user", "content": "Hi"}],
                 "max_tokens": 10,
             }

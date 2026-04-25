@@ -47,9 +47,9 @@ def main() -> None:
 
     # 4. 初始化数据库
     print("\n[4/6] 初始化数据库...")
-    db_dir = ROOT / "data" / "db"
+    db_dir = ROOT / "backend" / "data" / "db"
     db_dir.mkdir(parents=True, exist_ok=True)
-    projects_dir = ROOT / "data" / "projects"
+    projects_dir = ROOT / "backend" / "data" / "projects"
     projects_dir.mkdir(parents=True, exist_ok=True)
     alembic_dir = ROOT / "backend" / "alembic"
     if alembic_dir.exists():

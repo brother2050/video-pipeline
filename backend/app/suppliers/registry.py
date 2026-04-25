@@ -136,6 +136,7 @@ class SupplierRegistry:
                     api_key=slot.api_key or "",
                     provider_name=slot.provider,
                     is_local=slot.is_local,
+                    model=slot.model
                 )
 
         elif capability == SupplierCapability.IMAGE:

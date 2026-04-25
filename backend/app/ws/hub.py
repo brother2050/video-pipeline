@@ -16,12 +16,20 @@ class WSConnection:
         self.websocket = websocket
         self.subscriptions: set[str] = set()  # 订阅的 project_id 集合
         self.connected_at: datetime = datetime.now(timezone.utc)
+        self._closed: bool = False
 
     async def send_json(self, data: dict[str, Any]) -> None:
         await self.websocket.send_json(data)
 
     async def close(self) -> None:
-        await self.websocket.close()
+        if self._closed:  # ← 防止重复关闭
+            return
+        self._closed = True
+        try:
+            await self.websocket.close()
+        except RuntimeError:
+            # WebSocket 已经被 ASGI 框架关闭了，忽略
+            pass
 
 
 class WebSocketHub:

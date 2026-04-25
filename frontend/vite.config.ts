@@ -11,6 +11,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    hmr: {
+      path: "/hmr", // ← 关键：把 HMR 的 WebSocket 挪走
+    },
     proxy: {
       "/api": {
         target: "http://localhost:8000",

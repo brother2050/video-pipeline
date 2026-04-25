@@ -15,6 +15,7 @@ interface WebSocketState {
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectDelay = 1000;
+let connecting = false;
 
 const messageListeners: Set<(msg: WSMessage) => void> = new Set();
 
@@ -36,27 +37,35 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   subscriptions: new Set<string>(),
 
   connect: () => {
+    if (connecting) return;
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
-    ws = new WebSocket(getWsUrl());
+    connecting = true;
+    const socket = new WebSocket(getWsUrl());
+    ws = socket;
 
-    ws.onopen = () => {
+    socket.onopen = () => {
+      // 旧连接的回调，直接忽略
+      if (ws !== socket) return;
+
+      connecting = false;
       set({ connected: true });
       reconnectDelay = 1000;
-      // 重新订阅
       const subs = get().subscriptions;
       subs.forEach((projectId) => {
-        ws?.send(JSON.stringify({ type: "subscribe", data: { project_id: projectId } }));
+        socket.send(JSON.stringify({ type: "subscribe", data: { project_id: projectId } }));
       });
     };
 
-    ws.onmessage = (event) => {
+    socket.onmessage = (event) => {
+      if (ws !== socket) return;
+
       try {
         const msg = JSON.parse(event.data as string) as WSMessage;
         if (msg.type === "ping") {
-          ws?.send(JSON.stringify({ type: "pong", data: {}, timestamp: new Date().toISOString() }));
+          socket.send(JSON.stringify({ type: "pong", data: {}, timestamp: new Date().toISOString() }));
           return;
         }
         set({ lastMessage: msg });
@@ -66,7 +75,11 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       }
     };
 
-    ws.onclose = () => {
+    socket.onclose = () => {
+      // 旧连接关闭，不触发重连
+      if (ws !== socket) return;
+
+      connecting = false;
       set({ connected: false });
       ws = null;
       reconnectTimer = setTimeout(() => {
@@ -75,18 +88,22 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       }, reconnectDelay);
     };
 
-    ws.onerror = () => {
-      ws?.close();
+    socket.onerror = () => {
+      socket.close();
     };
   },
 
   disconnect: () => {
+    connecting = false;
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
-    ws?.close();
-    ws = null;
+    if (ws) {
+      const stale = ws;
+      ws = null;          // 先置空，让 onclose 看到 ws !== socket
+      stale.close();       // 再关闭
+    }
     set({ connected: false });
   },
 

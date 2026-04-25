@@ -8,8 +8,12 @@ export function useWebSocket() {
   const disconnect = useWebSocketStore((s) => s.disconnect);
 
   useEffect(() => {
-    connect();
+    // 延迟 300ms，等 Vite 代理和后端都就绪
+    const timer = setTimeout(() => {
+      connect();
+    }, 300);
     return () => {
+      clearTimeout(timer);
       disconnect();
     };
   }, [connect, disconnect]);

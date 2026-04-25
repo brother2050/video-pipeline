@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectApi } from "@/api";
-import type { ProjectCreate, ProjectUpdate } from "@/types";
+import type { ProjectCreate, ProjectUpdate, ProjectSettingUpdate } from "@/types";
 
 export function useProjects(page: number = 1, pageSize: number = 20) {
   return useQuery({
@@ -44,6 +44,24 @@ export function useDeleteProject() {
     mutationFn: (id: string) => projectApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useProjectSettings(projectId: string) {
+  return useQuery({
+    queryKey: ["projectSettings", projectId],
+    queryFn: () => projectApi.getSettings(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useUpdateProjectSettings(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: ProjectSettingUpdate) => projectApi.updateSettings(projectId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projectSettings", projectId] });
     },
   });
 }

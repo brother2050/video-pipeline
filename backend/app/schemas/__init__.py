@@ -18,6 +18,10 @@ from app.schemas.project import (
     ProjectUpdate,
     StageSummary,
 )
+from app.schemas.project_setting import (
+    ProjectSettingResponse,
+    ProjectSettingUpdate,
+)
 from app.schemas.stage import (
     StageConfigUpdate,
     StageGenerateRequest,
@@ -55,6 +59,8 @@ __all__ = [
     # Project
     "ProjectCreate", "ProjectUpdate", "ProjectResponse",
     "ProjectDetail", "StageSummary",
+    # Project Setting
+    "ProjectSettingResponse", "ProjectSettingUpdate",
     # Stage
     "StageResponse", "StageGenerateRequest",
     "StagePromptUpdate", "StageConfigUpdate",

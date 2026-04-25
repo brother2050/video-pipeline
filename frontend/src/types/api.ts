@@ -69,6 +69,87 @@ export interface ProjectDetail extends ProjectResponse {
   stages: StageResponse[];
 }
 
+// --- 项目设置 ---
+export interface ProjectSettingResponse {
+  id: string;
+  project_id: string;
+
+  // 生成默认值
+  default_num_candidates: number;
+  image_width: number;
+  image_height: number;
+  video_resolution: string;
+  video_fps: number;
+  video_duration_sec: number;
+
+  // 音频默认值
+  default_tts_voice: string;
+  default_bgm_style: string;
+  default_sfx_library: string;
+
+  // 输出设置
+  output_bitrate: string;
+  output_audio_codec: string;
+  output_audio_bitrate: string;
+
+  // 字幕设置
+  subtitle_enabled: boolean;
+  subtitle_font: string;
+  subtitle_size: number;
+  subtitle_color: string;
+  subtitle_position: string;
+
+  // 调色设置
+  color_grade_lut: string;
+  color_grade_intensity: number;
+  vignette_intensity: number;
+  grain_intensity: number;
+
+  // 供应商偏好
+  preferred_suppliers: Record<string, string>;
+
+  // ComfyUI
+  comfyui_workflow_path: string;
+
+  // 扩展
+  extra: Record<string, unknown>;
+
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectSettingUpdate {
+  default_num_candidates?: number;
+  image_width?: number;
+  image_height?: number;
+  video_resolution?: string;
+  video_fps?: number;
+  video_duration_sec?: number;
+
+  default_tts_voice?: string;
+  default_bgm_style?: string;
+  default_sfx_library?: string;
+
+  output_bitrate?: string;
+  output_audio_codec?: string;
+  output_audio_bitrate?: string;
+
+  subtitle_enabled?: boolean;
+  subtitle_font?: string;
+  subtitle_size?: number;
+  subtitle_color?: string;
+  subtitle_position?: string;
+
+  color_grade_lut?: string;
+  color_grade_intensity?: number;
+  vignette_intensity?: number;
+  grain_intensity?: number;
+
+  preferred_suppliers?: Record<string, string>;
+  comfyui_workflow_path?: string;
+  extra?: Record<string, unknown>;
+}
+
 // --- 阶段 ---
 export interface StageResponse {
   id: string;

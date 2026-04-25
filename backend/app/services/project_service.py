@@ -14,6 +14,7 @@ from app.models.candidate import Candidate
 from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse, StageSummary
 from app.schemas.enums import StageType, StageStatus
 from app.pipeline.engine import pipeline_engine, STAGE_ORDER
+from app.services import setting_service
 
 
 async def create_project(db: AsyncSession, data: ProjectCreate) -> Project:
@@ -32,6 +33,10 @@ async def create_project(db: AsyncSession, data: ProjectCreate) -> Project:
 
     await pipeline_engine.initialize_project(db, project)
     await db.flush()
+
+    await setting_service.get_or_create_settings(db, project.id)
+    await db.flush()
+
     return project
 
 

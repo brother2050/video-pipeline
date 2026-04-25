@@ -4,6 +4,8 @@ import type {
   ProjectUpdate,
   ProjectResponse,
   ProjectDetail,
+  ProjectSettingResponse,
+  ProjectSettingUpdate,
   PaginatedData,
 } from "@/types";
 
@@ -30,5 +32,15 @@ export const projectApi = {
 
   delete: async (id: string): Promise<void> => {
     await client.delete(`/projects/${id}`);
+  },
+
+  getSettings: async (id: string): Promise<ProjectSettingResponse> => {
+    const resp = await client.get(`/projects/${id}/settings`);
+    return resp.data as ProjectSettingResponse;
+  },
+
+  updateSettings: async (id: string, data: ProjectSettingUpdate): Promise<ProjectSettingResponse> => {
+    const resp = await client.put(`/projects/${id}/settings`, data);
+    return resp.data as ProjectSettingResponse;
   },
 };

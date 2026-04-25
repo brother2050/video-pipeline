@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+*.db
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Data (runtime)
+data/projects/
+data/db/
+*.db-journal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Logs
+*.log
+nohup.out
+
+# Build
+backend/data/
+frontend/dist/

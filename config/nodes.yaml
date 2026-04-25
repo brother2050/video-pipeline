@@ -1,0 +1,35 @@
+nodes:
+  - name: "localhost-ollama"
+    host: "127.0.0.1"
+    port: 11434
+    capabilities: ["llm"]
+    models: ["qwen2.5:7b", "llama3.1:8b"]
+    tags: {"env": "local"}
+
+  - name: "localhost-comfyui"
+    host: "127.0.0.1"
+    port: 8188
+    capabilities: ["image"]
+    models: []
+    tags: {"env": "local"}
+
+  - name: "localhost-sdwebui"
+    host: "127.0.0.1"
+    port: 7860
+    capabilities: ["image"]
+    models: []
+    tags: {"env": "local"}
+
+  - name: "localhost-cosyvoice"
+    host: "127.0.0.1"
+    port: 5000
+    capabilities: ["tts"]
+    models: []
+    tags: {"env": "local"}
+
+  - name: "localhost-musicgen"
+    host: "127.0.0.1"
+    port: 8200
+    capabilities: ["bgm"]
+    models: []
+    tags: {"env": "local"}

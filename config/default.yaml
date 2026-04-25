@@ -1,0 +1,23 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  cors_origins:
+    - "http://localhost:5173"
+
+database:
+
+  url: "sqlite+aiosqlite:///data/db/pipeline.db"
+
+storage:
+  data_dir: "data"
+  max_upload_size_mb: 500
+
+heartbeat:
+  interval_seconds: 30
+  timeout_seconds: 90
+
+supplier:
+  default_timeout: 60
+  default_local_timeout: 300
+  default_retry_count: 2

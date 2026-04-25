@@ -1,0 +1,5 @@
+# VideoPipeline
+
+全本地化、分布式、人在回路的视频生产系统。
+
+详见 [README.md](../README.md)

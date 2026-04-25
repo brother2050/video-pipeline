@@ -1,0 +1,122 @@
+"""
+OpenAI-compatible LLM adapter.
+Supports any provider implementing the OpenAI chat completions API.
+"""
+
+import json
+import time as _time
+from typing import Any, AsyncGenerator
+
+import httpx
+
+from app.schemas.supplier import SupplierTestResponse
+from app.suppliers.base import LLMBaseSupplier
+
+
+class OpenAICompatibleAdapter(LLMBaseSupplier):
+    """Adapter for OpenAI-compatible chat completion APIs."""
+
+    provider_name: str = "openai_compatible"
+    is_local: bool = False
+
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        provider_name: str = "openai_compatible",
+        is_local: bool = False,
+    ) -> None:
+        self._base_url = base_url.rstrip("/")
+        self._api_key = api_key
+        self.provider_name = provider_name
+        self.is_local = is_local
+        self._client = httpx.AsyncClient(
+            base_url=self._base_url,
+            headers={"Authorization": f"Bearer {self._api_key}"},
+            timeout=120.0,
+        )
+
+    async def chat(
+        self,
+        messages: list[dict[str, str]],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        **kwargs: Any,
+    ) -> str:
+        """Non-streaming chat completion."""
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+        payload.update(kwargs)
+        resp = await self._client.post("/chat/completions", json=payload)
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
+
+    async def chat_stream(
+        self,
+        messages: list[dict[str, str]],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        **kwargs: Any,
+    ) -> AsyncGenerator[str, None]:
+        """Streaming chat completion via SSE."""
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+        payload.update(kwargs)
+        async with self._client.stream("POST", "/chat/completions", json=payload) as resp:
+            resp.raise_for_status()
+            async for line in resp.aiter_lines():
+                if not line.startswith("data: "):
+                    continue
+                data_str = line[6:]
+                if data_str.strip() == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data_str)
+                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                    content = delta.get("content")
+                    if content:
+                        yield content
+                except json.JSONDecodeError:
+                    continue
+
+    async def test_connection(self) -> SupplierTestResponse:
+        """Test connection with a minimal chat request."""
+        t0 = _time.monotonic()
+        try:
+            payload: dict[str, Any] = {
+                "model": "gpt-3.5-turbo",
+                "messages": [{"role": "user", "content": "Hi"}],
+                "max_tokens": 10,
+            }
+            resp = await self._client.post("/chat/completions", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+            preview = data["choices"][0]["message"]["content"][:100]
+            latency = int((_time.monotonic() - t0) * 1000)
+            return SupplierTestResponse(
+                success=True, latency_ms=latency,
+                response_preview=preview, error=None,
+            )
+        except Exception as e:
+            latency = int((_time.monotonic() - t0) * 1000)
+            return SupplierTestResponse(
+                success=False, latency_ms=latency,
+                response_preview=None, error=str(e),
+            )
+
+    async def close(self) -> None:
+        """Close the HTTP client."""
+        await self._client.aclose()

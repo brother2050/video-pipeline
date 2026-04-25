@@ -1,0 +1,1 @@
+# Video supplier adapters

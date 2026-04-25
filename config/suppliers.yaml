@@ -1,0 +1,105 @@
+capabilities:
+  llm:
+    suppliers:
+      - provider: "deepseek"
+        model: "deepseek-chat"
+        base_url: "https://api.deepseek.com/v1"
+        api_key: ""
+        is_local: false
+        priority: 1
+      - provider: "ollama"
+        model: "qwen2.5:7b"
+        base_url: "http://127.0.0.1:11434"
+        is_local: true
+        priority: 99
+    retry_count: 2
+    timeout_seconds: 60
+    local_timeout_seconds: 300
+
+  image:
+    suppliers:
+      - provider: "siliconflow_image"
+        model: "black-forest-labs/FLUX.1-schnell"
+        base_url: "https://api.siliconflow.cn/v1"
+        api_key: ""
+        is_local: false
+        priority: 1
+      - provider: "comfyui"
+        base_url: "http://127.0.0.1:8188"
+        is_local: true
+        priority: 2
+      - provider: "sdwebui"
+        base_url: "http://127.0.0.1:7860"
+        is_local: true
+        priority: 3
+    retry_count: 2
+    timeout_seconds: 120
+    local_timeout_seconds: 600
+
+  video:
+    suppliers:
+      - provider: "siliconflow_video"
+        model: "tencent/HunyuanVideo"
+        base_url: "https://api.siliconflow.cn/v1"
+        api_key: ""
+        is_local: false
+        priority: 1
+      - provider: "local_video"
+        base_url: "http://127.0.0.1:8199"
+        is_local: true
+        priority: 99
+    retry_count: 1
+    timeout_seconds: 300
+    local_timeout_seconds: 900
+
+  tts:
+    suppliers:
+      - provider: "cosyvoice"
+        base_url: "http://127.0.0.1:5000"
+        is_local: true
+        priority: 1
+      - provider: "chattts"
+        base_url: "http://127.0.0.1:5001"
+        is_local: true
+        priority: 2
+    retry_count: 2
+    timeout_seconds: 60
+    local_timeout_seconds: 120
+
+  bgm:
+    suppliers:
+      - provider: "musicgen"
+        base_url: "http://127.0.0.1:8200"
+        is_local: true
+        priority: 1
+    retry_count: 1
+    timeout_seconds: 120
+    local_timeout_seconds: 300
+
+  sfx:
+    suppliers:
+      - provider: "audiocraft_sfx"
+        base_url: "http://127.0.0.1:8201"
+        is_local: true
+        priority: 1
+      - provider: "sound_library"
+        is_local: true
+        priority: 2
+    retry_count: 1
+    timeout_seconds: 60
+    local_timeout_seconds: 120
+
+  post:
+    suppliers:
+      - provider: "ffmpeg"
+        is_local: true
+        priority: 1
+      - provider: "esrgan"
+        is_local: true
+        priority: 2
+      - provider: "wav2lip"
+        is_local: true
+        priority: 3
+    retry_count: 0
+    timeout_seconds: 600
+    local_timeout_seconds: 600

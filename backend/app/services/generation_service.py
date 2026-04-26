@@ -57,7 +57,8 @@ async def call_llm_for_json(
             raw_response = await supplier.chat(
                 messages=enriched_messages, 
                 model="",
-                max_tokens=8192  # 使用合理的 token 限制
+                max_tokens=8192,  # 使用合理的 token 限制
+                schema=schema,
             )
         except Exception as e:
             # 如果是 token 限制错误，尝试更小的值
@@ -66,7 +67,8 @@ async def call_llm_for_json(
                 raw_response = await supplier.chat(
                     messages=enriched_messages, 
                     model="",
-                    max_tokens=4096  # 回退到更小的值
+                    max_tokens=4096,  # 回退到更小的值
+                    schema=schema,
                 )
             else:
                 raise

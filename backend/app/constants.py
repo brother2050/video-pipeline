@@ -41,6 +41,7 @@ PROVIDER_OPTIONS: dict[SupplierCapability, list[str]] = {
         "gemini",
         "glm",
         "qwen",
+        "paddle",
         "openai_compatible",
     ],
     SupplierCapability.IMAGE: [

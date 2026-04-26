@@ -119,7 +119,7 @@ class SupplierRegistry:
         if capability == SupplierCapability.LLM:
             if slot.provider == "ollama":
                 from app.suppliers.llm.ollama_adapter import OllamaAdapter
-                return OllamaAdapter(base_url=slot.base_url or "http://localhost:11434")
+                return OllamaAdapter(base_url=slot.base_url or "http://localhost:11434", model=slot.model)
             elif slot.provider == "gemini":
                 from app.suppliers.llm.gemini_adapter import GeminiAdapter
                 return GeminiAdapter(api_key=slot.api_key or "", model=slot.model)
@@ -129,6 +129,13 @@ class SupplierRegistry:
             elif slot.provider == "qwen":
                 from app.suppliers.llm.qwen_adapter import QwenAdapter
                 return QwenAdapter(api_key=slot.api_key or "", model=slot.model)
+            elif slot.provider == "paddle":
+                from app.suppliers.llm.paddle_adapter import PaddleAdapter
+                return PaddleAdapter(
+                    base_url=slot.base_url or "",
+                    api_key=slot.api_key or "",
+                    model=slot.model
+                )
             else:
                 from app.suppliers.llm.openai_compatible import OpenAICompatibleAdapter
                 return OpenAICompatibleAdapter(

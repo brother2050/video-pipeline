@@ -3,6 +3,8 @@ Ollama LLM adapter.
 """
 
 import json
+import logging
+import re
 import time as _time
 from typing import Any, AsyncGenerator
 
@@ -18,9 +20,10 @@ class OllamaAdapter(LLMBaseSupplier):
     provider_name: str = "ollama"
     is_local: bool = True
 
-    def __init__(self, base_url: str = "http://localhost:11434") -> None:
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama2") -> None:
         self._base_url = base_url.rstrip("/")
-        self._client = httpx.AsyncClient(base_url=self._base_url, timeout=300.0)
+        self._client = httpx.AsyncClient(base_url=self._base_url, timeout=600.0)
+        self._model = model
 
     async def chat(
         self,
@@ -28,20 +31,33 @@ class OllamaAdapter(LLMBaseSupplier):
         model: str,
         temperature: float = 0.7,
         max_tokens: int = 4096,
+        schema: dict[str, Any] = {}, 
         **kwargs: Any,
     ) -> str:
-        """Non-streaming chat via Ollama API."""
-        payload: dict[str, Any] = {
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            "options": {"temperature": temperature, "num_predict": max_tokens},
-        }
-        payload.update(kwargs)
-        resp = await self._client.post("/api/chat", json=payload)
-        resp.raise_for_status()
-        data = resp.json()
-        return data.get("message", {}).get("content", "")
+        # 把调用从 chat() 改为 chat_stream()
+        raw_response = ""
+        async for chunk in self.chat_stream(
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            schema=schema,
+        ):
+            raw_response += chunk
+        # """Non-streaming chat via Ollama API."""
+        # payload: dict[str, Any] = {
+        #     "model": model or self._model,
+        #     "messages": messages,
+        #     "stream": False,
+        #     "options": {"temperature": temperature, "num_predict": max_tokens},
+        #     "format": schema,
+        # }
+        # payload.update(kwargs)
+        # resp = await self._client.post("/api/chat", json=payload, timeout=600.0)
+        # resp.raise_for_status()
+        # data = resp.json()
+        # return data.get("message", {}).get("content", "")
+        return raw_response
 
     async def chat_stream(
         self,
@@ -49,14 +65,16 @@ class OllamaAdapter(LLMBaseSupplier):
         model: str,
         temperature: float = 0.7,
         max_tokens: int = 4096,
+        schema: dict[str, Any] = {},
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         """Streaming chat via Ollama API."""
         payload: dict[str, Any] = {
-            "model": model,
+            "model": model or self._model,
             "messages": messages,
             "stream": True,
             "options": {"temperature": temperature, "num_predict": max_tokens},
+            "format": schema,
         }
         payload.update(kwargs)
         async with self._client.stream("POST", "/api/chat", json=payload) as resp:

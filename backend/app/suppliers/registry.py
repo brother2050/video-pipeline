@@ -3,7 +3,9 @@ Supplier registry: manages all supplier instances by capability with priority sc
 """
 
 import asyncio
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from app.schemas.enums import SupplierCapability
@@ -14,6 +16,18 @@ from app.schemas.supplier import (
 )
 from app.suppliers.base import BaseSupplier
 from app.exceptions import AllSuppliersExhausted
+
+
+def _load_workflow_from_file(path: str) -> dict[str, Any] | None:
+    """Load workflow JSON from file path."""
+    try:
+        file_path = Path(path)
+        if file_path.exists():
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Failed to load workflow from {path}: {e}")
+    return None
 
 
 class SupplierHealth:
@@ -149,7 +163,16 @@ class SupplierRegistry:
         elif capability == SupplierCapability.IMAGE:
             if slot.provider == "comfyui":
                 from app.suppliers.image.comfyui_adapter import ComfyUIAdapter
-                return ComfyUIAdapter(base_url=slot.base_url or "http://localhost:8188")
+                workflow = None
+                if slot.extra_params:
+                    workflow_path = slot.extra_params.get("workflow_template")
+                    if workflow_path:
+                        workflow = _load_workflow_from_file(workflow_path)
+ 
+                return ComfyUIAdapter(
+                    base_url=slot.base_url or "http://localhost:8188",
+                    workflow_template=workflow
+                )
             elif slot.provider == "sdwebui":
                 from app.suppliers.image.sdwebui_adapter import SDWebUIAdapter
                 return SDWebUIAdapter(base_url=slot.base_url or "http://localhost:7860")

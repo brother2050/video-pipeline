@@ -2,7 +2,7 @@
 流水线服务：协调阶段生成流程。
 """
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import select
@@ -17,6 +17,9 @@ from app.pipeline.engine import pipeline_engine, STAGE_ORDER
 from app.exceptions import PipelineError, ConflictError
 from app.ws.hub import ws_hub
 from datetime import datetime, timezone
+
+if TYPE_CHECKING:
+    from app.suppliers.registry import SupplierRegistry
 
 
 async def generate_candidates(
@@ -65,9 +68,17 @@ async def generate_candidates(
         registry=registry,
     )
 
+    # 刷新数据库会话，确保所有关系都被正确加载
+    await db.flush()
+    
+    # 重新加载候选以确保 artifacts 关系被正确加载
+    for candidate in candidates:
+        await db.refresh(candidate)
+
     # 更新阶段状态为 REVIEW
     stage.status = StageStatus.REVIEW.value
     await db.flush()
+    await db.refresh(stage)  # 确保返回前刷新 stage
 
     # WebSocket 通知
     await ws_hub.broadcast_to_project(

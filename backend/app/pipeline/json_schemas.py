@@ -12,7 +12,7 @@ WORLDBUILDING_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["world_bible", "characters"],
     "properties": {
-        "world_bible": {"type": "string", "minLength": 100},
+        "world_bible": {"type": "string", "minLength": 30},
         "characters": {
             "type": "array",
             "minItems": 1,
@@ -45,7 +45,7 @@ OUTLINE_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "number": {"type": "integer", "minimum": 1},
                     "title": {"type": "string", "minLength": 1},
-                    "summary": {"type": "string", "minLength": 50},
+                    "summary": {"type": "string", "minLength": 20},
                     "scene_names": {"type": "array", "items": {"type": "string"}, "minItems": 3},
                 },
             },
@@ -82,7 +82,7 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                     "location": {"type": "string"},
                     "time_of_day": {"type": "string", "enum": ["dawn", "morning", "noon", "afternoon", "dusk", "night"]},
                     "characters_present": {"type": "array", "items": {"type": "string"}},
-                    "action": {"type": "string", "minLength": 30},
+                    "action": {"type": "string", "minLength": 10},
                     "dialogue": {
                         "type": "array",
                         "items": {
@@ -120,8 +120,8 @@ STORYBOARD_SCHEMA: dict[str, Any] = {
                     "camera_movement": {"type": "string", "enum": ["static", "pan_left", "pan_right", "tilt_up", "tilt_down", "dolly_in", "dolly_out", "tracking", "crane", "handheld"]},
                     "description": {"type": "string"},
                     "duration_sec": {"type": "number", "minimum": 1, "maximum": 30},
-                    "image_prompt": {"type": "string", "minLength": 20},
-                    "video_prompt": {"type": "string", "minLength": 20},
+                    "image_prompt": {"type": "string", "minLength": 10},
+                    "video_prompt": {"type": "string", "minLength": 10},
                     "negative_prompt": {"type": "string", "default": ""},
                 },
             },

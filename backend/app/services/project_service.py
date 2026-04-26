@@ -68,6 +68,7 @@ async def update_project(db: AsyncSession, project_id: UUID, data: ProjectUpdate
     for key, value in update_data.items():
         setattr(project, key, value)
     await db.flush()
+    await db.refresh(project)
     return project
 
 
@@ -81,6 +82,8 @@ async def delete_project(db: AsyncSession, project_id: UUID) -> None:
 
 async def build_project_response(db: AsyncSession, project: Project) -> dict[str, Any]:
     """构建 ProjectResponse（含 stages_summary）"""
+    await db.refresh(project)  # 确保访问 project 属性前刷新
+    
     stages_result = await db.execute(
         select(Stage).where(Stage.project_id == project.id)
     )

@@ -1,7 +1,7 @@
 import { StageType, StageStatus } from "@/types";
 
 export const STAGE_LABELS: Record<StageType, string> = {
-  [StageType.WORLDBUILDING]: "世界观",
+  [StageType.WORLDBUILDING]: "世界观构建",
   [StageType.OUTLINE]: "大纲",
   [StageType.SCRIPT]: "剧本",
   [StageType.STORYBOARD]: "分镜",
@@ -13,7 +13,7 @@ export const STAGE_LABELS: Record<StageType, string> = {
 };
 
 export const STAGE_STATUS_LABELS: Record<StageStatus, string> = {
-  [StageStatus.PENDING]: "待开始",
+  [StageStatus.PENDING]: "待处理",
   [StageStatus.READY]: "就绪",
   [StageStatus.GENERATING]: "生成中",
   [StageStatus.REVIEW]: "审核中",
@@ -31,7 +31,13 @@ export const STAGE_STATUS_COLORS: Record<StageStatus, string> = {
 };
 
 export const STAGE_ORDER: StageType[] = [
-  StageType.WORLDBUILDING, StageType.OUTLINE, StageType.SCRIPT,
-  StageType.STORYBOARD, StageType.KEYFRAME, StageType.VIDEO,
-  StageType.AUDIO, StageType.ROUGH_CUT, StageType.FINAL_CUT,
+  StageType.WORLDBUILDING,
+  StageType.OUTLINE,
+  StageType.SCRIPT,
+  StageType.STORYBOARD,
+  StageType.KEYFRAME,
+  StageType.VIDEO,
+  StageType.AUDIO,
+  StageType.ROUGH_CUT,
+  StageType.FINAL_CUT,
 ];

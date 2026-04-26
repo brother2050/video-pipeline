@@ -6,6 +6,15 @@
 import { useParams } from "react-router-dom";
 import { useProject } from "@/hooks/useProjects";
 import { useProjectSettings, useUpdateProjectSettings } from "@/hooks/useProjects";
+import {
+  useResolutions,
+  useSubtitlePositions,
+  useAudioCodecs,
+  useVideoBitrates,
+  useAudioBitrates,
+  useFonts,
+  useSubtitleColors,
+} from "@/hooks/useConstants";
 import { ProjectNav } from "@/components/layout/ProjectNav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,14 +27,19 @@ import { Loader2, Save } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { ProjectSettingResponse, ProjectSettingUpdate } from "@/types";
 
-const RESOLUTIONS = ["1280x720", "1920x1080", "2560x1440", "3840x2160"];
-const SUBTITLE_POSITIONS = ["bottom_center", "bottom_left", "bottom_right", "top_center", "top_left", "top_right"];
-
 export default function ProjectSettingsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: project } = useProject(id || "");
   const { data: settings, isLoading } = useProjectSettings(id || "");
   const updateMut = useUpdateProjectSettings(id || "");
+
+  const { data: resolutions } = useResolutions();
+  const { data: subtitlePositions } = useSubtitlePositions();
+  const { data: audioCodecs } = useAudioCodecs();
+  const { data: videoBitrates } = useVideoBitrates();
+  const { data: audioBitrates } = useAudioBitrates();
+  const { data: fonts } = useFonts();
+  const { data: subtitleColors } = useSubtitleColors();
 
   const [form, setForm] = useState<ProjectSettingUpdate>({});
   const [dirty, setDirty] = useState(false);
@@ -121,7 +135,7 @@ export default function ProjectSettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {RESOLUTIONS.map((r) => (
+                  {(resolutions || []).map((r) => (
                     <SelectItem key={r} value={r}>{r}</SelectItem>
                   ))}
                 </SelectContent>
@@ -172,21 +186,42 @@ export default function ProjectSettingsPage() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label className="text-xs">视频码率</Label>
-              <Input value={current("output_bitrate")}
-                onChange={(e) => updateField("output_bitrate", e.target.value)}
-                className="h-8" placeholder="8M" />
+              <Select value={current("output_bitrate")} onValueChange={(v) => updateField("output_bitrate", v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="选择码率" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(videoBitrates || []).map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-xs">音频编码</Label>
-              <Input value={current("output_audio_codec")}
-                onChange={(e) => updateField("output_audio_codec", e.target.value)}
-                className="h-8" placeholder="aac" />
+              <Select value={current("output_audio_codec")} onValueChange={(v) => updateField("output_audio_codec", v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="选择编码" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(audioCodecs || []).map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-xs">音频码率</Label>
-              <Input value={current("output_audio_bitrate")}
-                onChange={(e) => updateField("output_audio_bitrate", e.target.value)}
-                className="h-8" placeholder="192k" />
+              <Select value={current("output_audio_bitrate")} onValueChange={(v) => updateField("output_audio_bitrate", v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="选择码率" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(audioBitrates || []).map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </Card>
@@ -205,9 +240,16 @@ export default function ProjectSettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs">字体</Label>
-              <Input value={current("subtitle_font")}
-                onChange={(e) => updateField("subtitle_font", e.target.value)}
-                className="h-8" />
+              <Select value={current("subtitle_font")} onValueChange={(v) => updateField("subtitle_font", v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="选择字体" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(fonts || []).map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-xs">字号</Label>
@@ -221,9 +263,16 @@ export default function ProjectSettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs">颜色</Label>
-              <Input value={current("subtitle_color")}
-                onChange={(e) => updateField("subtitle_color", e.target.value)}
-                className="h-8" placeholder="white" />
+              <Select value={current("subtitle_color")} onValueChange={(v) => updateField("subtitle_color", v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="选择颜色" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(subtitleColors || []).map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-xs">位置</Label>
@@ -232,7 +281,7 @@ export default function ProjectSettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SUBTITLE_POSITIONS.map((p) => (
+                  {(subtitlePositions || []).map((p) => (
                     <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
                 </SelectContent>

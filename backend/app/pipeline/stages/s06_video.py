@@ -4,7 +4,7 @@
 """
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from pathlib import Path
 
 from sqlalchemy import select
@@ -16,6 +16,9 @@ from app.models.candidate import Candidate, Artifact
 from app.schemas.enums import StageType, SupplierCapability, FileType
 from app.pipeline.stages.base import BaseStage
 from app.config import settings
+
+if TYPE_CHECKING:
+    from app.suppliers.registry import SupplierRegistry
 
 
 class VideoStage(BaseStage):

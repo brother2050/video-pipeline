@@ -4,7 +4,7 @@
 """
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,9 @@ from app.schemas.enums import StageType
 from app.pipeline.stages.base import BaseStage
 from app.pipeline.json_schemas import WORLDBUILDING_SCHEMA
 from app.pipeline.prompts import WORLDBUILDING_TEMPLATE, WORLDBUILDING_EXAMPLE
+
+if TYPE_CHECKING:
+    from app.suppliers.registry import SupplierRegistry
 
 
 class WorldbuildingStage(BaseStage):

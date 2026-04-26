@@ -5,7 +5,7 @@ LLM 生成规划 → 三种供应商分别生成音频。
 
 import json
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from pathlib import Path
 
 from sqlalchemy import select
@@ -18,6 +18,9 @@ from app.schemas.enums import StageType, SupplierCapability, FileType
 from app.pipeline.stages.base import BaseStage
 from app.pipeline.json_schemas import AUDIO_SCHEMA
 from app.pipeline.prompts import AUDIO_TEMPLATE, AUDIO_EXAMPLE
+
+if TYPE_CHECKING:
+    from app.suppliers.registry import SupplierRegistry
 from app.config import settings
 
 

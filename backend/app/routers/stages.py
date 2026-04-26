@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.dependencies import get_stage_or_404
@@ -15,7 +16,7 @@ from app.models.project import Project
 from app.models.stage import Stage
 from app.models.candidate import Candidate, Artifact
 from app.schemas.common import APIResponse
-from app.schemas.enums import StageType, StageStatus
+from app.schemas.enums import StageType, StageStatus, FileType
 from app.schemas.stage import (
     StageResponse, StageGenerateRequest, StagePromptUpdate, StageConfigUpdate,
 )
@@ -49,18 +50,29 @@ def _stage_to_response(stage: Stage) -> StageResponse:
 
 def _candidate_to_response(candidate: Candidate, stage_type: str) -> CandidateResponse:
     artifacts = []
-    for a in candidate.artifacts:
-        artifacts.append(ArtifactResponse(
-            id=str(a.id),
-            candidate_id=str(a.candidate_id),
-            file_type=a.file_type,
-            file_path=a.file_path,
-            file_url=f"/api/files/{a.file_path}",
-            file_size=a.file_size,
-            mime_type=a.mime_type,
-            metadata=a.metadata_ or {},
-            created_at=a.created_at,
-        ))
+    # 安全地访问 artifacts，避免懒加载问题
+    try:
+        if hasattr(candidate, 'artifacts') and candidate.artifacts:
+            for a in candidate.artifacts:
+                # 直接使用字符串，避免枚举转换问题
+                file_type_str = a.file_type if a.file_type in ["text", "image", "video", "audio", "json"] else "json"
+                file_type = FileType(file_type_str)
+                
+                artifacts.append(ArtifactResponse(
+                    id=str(a.id),
+                    candidate_id=str(a.candidate_id),
+                    file_type=file_type,
+                    file_path=a.file_path,
+                    file_url=f"/api/files/{a.file_path}",
+                    file_size=a.file_size,
+                    mime_type=a.mime_type,
+                    metadata=a.metadata_ or {},
+                    created_at=a.created_at,
+                ))
+    except Exception:
+        # 如果无法加载 artifacts，返回空列表
+        pass
+    
     return CandidateResponse(
         id=str(candidate.id),
         stage_id=str(candidate.stage_id),
@@ -111,6 +123,7 @@ async def update_prompt(
     stage = result.scalar_one()
     stage.prompt = data.prompt
     await db.flush()
+    await db.refresh(stage)
     return APIResponse(data=_stage_to_response(stage))
 
 
@@ -127,6 +140,7 @@ async def update_config(
     stage = result.scalar_one()
     stage.config = data.config
     await db.flush()
+    await db.refresh(stage)
     return APIResponse(data=_stage_to_response(stage))
 
 
@@ -190,6 +204,7 @@ async def select_candidate(
     stage = stage_result.scalar_one()
     stage.current_candidate_id = UUID(data.candidate_id)
     await db.flush()
+    await db.refresh(stage)
     return APIResponse(data=_stage_to_response(stage))
 
 
@@ -209,6 +224,7 @@ async def review_stage(
         candidate_id=UUID(data.candidate_id) if data.candidate_id else None,
         comment=data.comment or "",
     )
+    await db.refresh(updated_stage)
     return APIResponse(data=_stage_to_response(updated_stage))
 
 

@@ -23,7 +23,7 @@ export class NetworkError extends Error {
 const client = axios.create({
   baseURL: "/api",
   headers: { "Content-Type": "application/json" },
-  timeout: 60_000,
+  timeout: 300_000, // 5分钟，适应长时间运行的操作（如视频生成）
 });
 
 client.interceptors.response.use(

@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjects, useCreateProject, useDeleteProject } from "@/hooks/useProjects";
+import { useGenres } from "@/hooks/useConstants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +19,14 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { formatDate } from "@/lib/utils";
 import { STAGE_LABELS } from "@/lib/constants";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 import { StageStatus } from "@/types";
 import type { ProjectCreate } from "@/types";
 
 export default function ProjectList() {
   const navigate = useNavigate();
+  const { data: genres } = useGenres();
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -65,7 +68,16 @@ export default function ProjectList() {
               </div>
               <div>
                 <Label>题材类型</Label>
-                <Input value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })} placeholder="科幻、悬疑、都市..." />
+                <Select value={form.genre} onValueChange={(v) => setForm({ ...form, genre: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择题材类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(genres || []).map((g) => (
+                      <SelectItem key={g} value={g}>{g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

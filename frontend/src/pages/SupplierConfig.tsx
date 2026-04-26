@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { useSuppliers, useUpdateSupplier, useTestSupplier } from "@/hooks/useSuppliers";
+import { useProviders, useCapabilityLabels } from "@/hooks/useConstants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,23 +15,21 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { WorkflowUploader } from "@/components/shared/WorkflowUploader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, TestTube, Save, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { SupplierCapability } from "@/types";
 import type { SupplierSlot, CapabilityConfigResponse, WorkflowAnalysis } from "@/types";
 
-const CAP_TABS: { value: SupplierCapability; label: string }[] = [
-  { value: SupplierCapability.LLM, label: "LLM" },
-  { value: SupplierCapability.IMAGE, label: "图像" },
-  { value: SupplierCapability.VIDEO, label: "视频" },
-  { value: SupplierCapability.TTS, label: "TTS" },
-  { value: SupplierCapability.BGM, label: "BGM" },
-  { value: SupplierCapability.SFX, label: "音效" },
-  { value: SupplierCapability.POST, label: "后期" },
-];
-
 export default function SupplierConfig() {
+  const { data: capabilityLabels } = useCapabilityLabels();
   const { data: configs, isLoading } = useSuppliers();
-if (isLoading) {
+  
+  const CAP_TABS: { value: SupplierCapability; label: string }[] = Object.entries(capabilityLabels || {}).map(([value, label]) => ({
+    value: value as SupplierCapability,
+    label
+  }));
+
+  if (isLoading) {
     return <div className="text-center py-12 text-muted-foreground">加载中...</div>;
   }
 
@@ -59,6 +58,7 @@ if (isLoading) {
 }
 
 function CapabilityTab({ capability, config }: { capability: SupplierCapability; config?: CapabilityConfigResponse }) {
+  const { data: providers } = useProviders(capability);
   const updateMut = useUpdateSupplier(capability);
   const testMut = useTestSupplier();
 
@@ -194,7 +194,16 @@ function CapabilityTab({ capability, config }: { capability: SupplierCapability;
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Provider</Label>
-                <Input value={slot.provider} onChange={(e) => updateSlot(idx, "provider", e.target.value)} className="h-8" placeholder="comfyui" />
+                <Select value={slot.provider} onValueChange={(v) => updateSlot(idx, "provider", v)}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="选择 Provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(providers || []).map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-xs">Model</Label>

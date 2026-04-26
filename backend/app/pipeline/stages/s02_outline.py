@@ -3,7 +3,7 @@
 """
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,9 @@ from app.schemas.enums import StageType
 from app.pipeline.stages.base import BaseStage
 from app.pipeline.json_schemas import OUTLINE_SCHEMA
 from app.pipeline.prompts import OUTLINE_TEMPLATE, OUTLINE_EXAMPLE
+
+if TYPE_CHECKING:
+    from app.suppliers.registry import SupplierRegistry
 
 
 class OutlineStage(BaseStage):

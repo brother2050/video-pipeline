@@ -121,6 +121,7 @@ from app.routers.files import router as files_router
 from app.routers.system import router as system_router
 from app.routers.nodes import router as nodes_router
 from app.routers.suppliers import router as suppliers_router
+from app.routers.constants import router as constants_router
 
 app.include_router(projects_router, prefix="/api", tags=["projects"])
 app.include_router(stages_router, prefix="/api", tags=["stages"])
@@ -128,6 +129,7 @@ app.include_router(files_router, prefix="/api", tags=["files"])
 app.include_router(system_router, prefix="/api", tags=["system"])
 app.include_router(nodes_router, prefix="/api", tags=["nodes"])
 app.include_router(suppliers_router, prefix="/api", tags=["suppliers"])
+app.include_router(constants_router, prefix="/api", tags=["constants"])
 
 # 静态文件（放在路由之后）
 app.mount(

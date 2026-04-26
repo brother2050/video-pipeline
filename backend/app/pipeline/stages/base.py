@@ -3,7 +3,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +11,9 @@ from app.models.project import Project
 from app.models.stage import Stage
 from app.models.candidate import Candidate
 from app.schemas.enums import StageType
+
+if TYPE_CHECKING:
+    from app.suppliers.registry import SupplierRegistry
 
 
 class BaseStage(ABC):

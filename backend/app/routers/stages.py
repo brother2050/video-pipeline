@@ -185,10 +185,42 @@ async def list_candidates(
     )
     stage = stage_result.scalar_one()
     result = await db.execute(
-        select(Candidate).where(Candidate.stage_id == stage.id).order_by(Candidate.created_at)
+        select(Candidate)
+        .where(Candidate.stage_id == stage.id)
+        .order_by(Candidate.created_at)
+        .options(selectinload(Candidate.artifacts))
     )
     candidates = list(result.scalars().all())
     return APIResponse(data=[_candidate_to_response(c, stage_type) for c in candidates])
+
+
+@router.get("/projects/{project_id}/stages/{stage_type}/candidates/{candidate_id}", response_model=APIResponse[CandidateResponse])
+async def get_candidate_detail(
+    project_id: UUID,
+    stage_type: str,
+    candidate_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> APIResponse[CandidateResponse]:
+    stage_result = await db.execute(
+        select(Stage).where(Stage.project_id == project_id, Stage.stage_type == stage_type)
+    )
+    stage = stage_result.scalar_one()
+    
+    result = await db.execute(
+        select(Candidate)
+        .where(
+            Candidate.id == candidate_id,
+            Candidate.stage_id == stage.id
+        )
+        .options(selectinload(Candidate.artifacts))
+    )
+    candidate = result.scalar_one_or_none()
+    
+    if candidate is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    return APIResponse(data=_candidate_to_response(candidate, stage_type))
 
 
 @router.post("/projects/{project_id}/stages/{stage_type}/select", response_model=APIResponse[StageResponse])

@@ -23,7 +23,7 @@ router = APIRouter()
 @router.get("/files/{file_path:path}")
 async def serve_file(file_path: str) -> FileResponse:
     """返回文件内容，自动设置 Content-Type"""
-    full_path = Path(settings.data_dir) / "projects" / file_path
+    full_path = Path(settings.data_dir) / file_path
     if not full_path.exists():
         raise NotFoundError("File", file_path)
     return FileResponse(path=str(full_path))

@@ -26,6 +26,14 @@ export function useCandidates(projectId: string, stageType: string) {
   });
 }
 
+export function useCandidateDetail(projectId: string, stageType: string, candidateId: string) {
+  return useQuery({
+    queryKey: ["candidate", projectId, stageType, candidateId],
+    queryFn: () => stageApi.getCandidateDetail(projectId, stageType, candidateId),
+    enabled: !!projectId && !!stageType && !!candidateId,
+  });
+}
+
 export function useGenerate(projectId: string, stageType: string) {
   const qc = useQueryClient();
   return useMutation({

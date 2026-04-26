@@ -23,7 +23,6 @@ import { VersionTimeline } from "@/components/shared/VersionTimeline";
 import { PromptEditor } from "@/components/shared/PromptEditor";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StageStatusBadge } from "@/components/shared/StageStatusBadge";
-import { CandidateDetail } from "@/components/shared/CandidateDetail";
 import { ProjectNav } from "@/components/layout/ProjectNav";
 import { STAGE_LABELS } from "@/lib/constants";
 import { Loader2, Play } from "lucide-react";
@@ -169,6 +168,7 @@ export default function StageReview() {
                   key={c.id}
                   candidate={c}
                   stageType={stageType as StageType}
+                  projectId={id}
                   isSelected={selectedCandidateId === c.id}
                   onSelect={() => handleSelect(c.id)}
                 />
@@ -192,19 +192,6 @@ export default function StageReview() {
             availableRollbackStages={rollbackStages}
             isReviewing={reviewMut.isPending || rollbackMut.isPending}
           />
-
-          {/* 选中候选详情 */}
-          {selectedCandidateId && candidates && (
-            <div className="mt-4 border-t pt-4">
-              <h4 className="text-xs font-medium text-muted-foreground mb-2">选中候选详情</h4>
-              <div className="border rounded-lg p-3 bg-muted/30">
-                <CandidateDetail
-                  content={candidates.find(c => c.id === selectedCandidateId)?.content ?? {}}
-                  stageType={stageType as StageType}
-                />
-              </div>
-            </div>
-          )}
         </Card>
       </div>
     </div>

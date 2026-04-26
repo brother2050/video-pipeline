@@ -1,17 +1,39 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import type { CandidateResponse } from "@/types";
 
 interface CandidateCardProps {
   candidate: CandidateResponse;
   stageType: string;
+  projectId: string;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
+export function CandidateCard({ candidate, stageType, projectId, isSelected, onSelect }: CandidateCardProps) {
+  const navigate = useNavigate();
   const contentPreview = JSON.stringify(candidate.content, null, 2).slice(0, 200);
+
+  const handleClick = () => {
+    console.log('CandidateCard clicked:', {
+      candidateId: candidate.id,
+      artifacts: candidate.artifacts,
+      artifactsCount: candidate.artifacts?.length || 0,
+      stageType,
+      projectId
+    });
+    
+    if (candidate.artifacts && candidate.artifacts.length > 0) {
+      const targetPath = `/projects/${projectId}/stages/${stageType}/candidates/${candidate.id}`;
+      console.log('Navigating to:', targetPath);
+      navigate(targetPath);
+    } else {
+      console.log('No artifacts, calling onSelect');
+      onSelect();
+    }
+  };
 
   return (
     <Card
@@ -19,7 +41,7 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
         "p-3 cursor-pointer transition-all hover:shadow-md",
         isSelected && "ring-2 ring-primary"
       )}
-      onClick={onSelect}
+      onClick={handleClick}
     >
       <div className="flex items-start justify-between mb-2">
         <Badge variant="outline" className="text-[10px]">

@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const ProjectList = lazy(() => import("@/pages/ProjectList"));
 const PipelineView = lazy(() => import("@/pages/PipelineView"));
 const StageReview = lazy(() => import("@/pages/StageReview"));
+const CandidateDetailView = lazy(() => import("@/pages/CandidateDetailView"));
 const ProjectSettings = lazy(() => import("@/pages/ProjectSettings"));
 const NodeManager = lazy(() => import("@/pages/NodeManager"));
 const SupplierConfig = lazy(() => import("@/pages/SupplierConfig"));
@@ -35,6 +36,7 @@ function AppInner() {
           <Route path="/projects/:id" element={<Navigate to="pipeline" replace />} />
           <Route path="/projects/:id/pipeline" element={<Suspense fallback={<LoadingFallback />}><PipelineView /></Suspense>} />
           <Route path="/projects/:id/stages/:stageType" element={<Suspense fallback={<LoadingFallback />}><StageReview /></Suspense>} />
+          <Route path="/projects/:id/stages/:stageType/candidates/:candidateId" element={<Suspense fallback={<LoadingFallback />}><CandidateDetailView /></Suspense>} />
           <Route path="/projects/:id/settings" element={<Suspense fallback={<LoadingFallback />}><ProjectSettings /></Suspense>} />
           <Route path="/nodes" element={<Suspense fallback={<LoadingFallback />}><NodeManager /></Suspense>} />
           <Route path="/suppliers" element={<Suspense fallback={<LoadingFallback />}><SupplierConfig /></Suspense>} />

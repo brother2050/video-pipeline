@@ -43,6 +43,11 @@ export const stageApi = {
     return resp.data as CandidateResponse[];
   },
 
+  getCandidateDetail: async (projectId: string, stageType: string, candidateId: string): Promise<CandidateResponse> => {
+    const resp = await client.get(`/projects/${projectId}/stages/${stageType}/candidates/${candidateId}`);
+    return resp.data as CandidateResponse;
+  },
+
   selectCandidate: async (projectId: string, stageType: string, data: CandidateSelectRequest): Promise<StageResponse> => {
     const resp = await client.post(`/projects/${projectId}/stages/${stageType}/select`, data);
     return resp.data as StageResponse;

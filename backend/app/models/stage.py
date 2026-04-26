@@ -28,6 +28,8 @@ class Stage(Base):
     )
     stage_type: Mapped[str] = mapped_column(String(50), nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="pending")
+    progress_current: Mapped[int] = mapped_column(default=0)
+    progress_total: Mapped[int] = mapped_column(default=0)
     prompt: Mapped[str] = mapped_column(Text, default="")
     config: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     current_candidate_id: Mapped[uuid.UUID | None] = mapped_column(

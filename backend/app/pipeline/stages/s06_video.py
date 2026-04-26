@@ -43,6 +43,9 @@ class VideoStage(BaseStage):
         num_candidates: int,
         registry: "SupplierRegistry",
     ) -> list[Candidate]:
+        from app.ws.hub import ws_hub
+        from datetime import datetime, timezone
+
         # 获取阶段4 shots
         sb_stage_result = await db.execute(
             select(Stage).where(
@@ -73,7 +76,31 @@ class VideoStage(BaseStage):
 
         video_supplier = await registry.get_with_fallback(SupplierCapability.VIDEO)
 
+        # 初始化进度
+        total_tasks = num_candidates * len(shots)
+        stage.progress_total = total_tasks
+        stage.progress_current = 0
+        await db.flush()
+
+        # 发送初始进度
+        await ws_hub.broadcast_to_project(
+            str(project.id),
+            {
+                "type": "stage_progress",
+                "data": {
+                    "project_id": str(project.id),
+                    "stage_type": StageType.VIDEO.value,
+                    "progress_current": 0,
+                    "progress_total": total_tasks,
+                    "status": "generating",
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
         candidates: list[Candidate] = []
+        current_task = 0
+        
         for cand_idx in range(num_candidates):
             generated_clips: list[dict[str, Any]] = []
             project_dir = Path(settings.data_dir) / "projects" / str(project.id)
@@ -123,6 +150,27 @@ class VideoStage(BaseStage):
                     "resolution": config.get("resolution", "1280x720"),
                     "artifact_id": str(artifact.id),
                 })
+
+                # 更新进度
+                current_task += 1
+                stage.progress_current = current_task
+                await db.flush()
+                
+                # 发送进度更新
+                await ws_hub.broadcast_to_project(
+                    str(project.id),
+                    {
+                        "type": "stage_progress",
+                        "data": {
+                            "project_id": str(project.id),
+                            "stage_type": StageType.VIDEO.value,
+                            "progress_current": current_task,
+                            "progress_total": total_tasks,
+                            "status": "generating",
+                        },
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
 
             candidate = Candidate(
                 stage_id=stage.id,

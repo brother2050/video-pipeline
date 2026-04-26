@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useProject } from "@/hooks/useProjects";
 import {
-  useStage, useCandidates, useGenerate, useSelectCandidate,
+  useStage, useCandidates, useGenerate,
   useReview, useRollback, useVersions, useUpdatePrompt,
 } from "@/hooks/useStages";
 import { useWebSocketStore } from "@/stores/websocketStore";
@@ -40,13 +40,16 @@ export default function StageReview() {
   const { data: versions } = useVersions(id || "", stageType || "");
 
   const generateMut = useGenerate(id || "", stageType || "");
-  const selectMut = useSelectCandidate(id || "", stageType || "");
   const reviewMut = useReview(id || "", stageType || "");
   const rollbackMut = useRollback(id || "", stageType || "");
   const updatePromptMut = useUpdatePrompt(id || "", stageType || "");
 
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [numCandidates, setNumCandidates] = useState(3);
+
+  const handleSelect = (candidateId: string) => {
+    setSelectedCandidateId(candidateId);
+  };
 
   useEffect(() => {
     if (id) subscribe(id);
@@ -78,11 +81,6 @@ export default function StageReview() {
 
   const handleGenerate = async () => {
     await generateMut.mutateAsync({ num_candidates: numCandidates });
-  };
-
-  const handleSelect = (candidateId: string) => {
-    setSelectedCandidateId(candidateId);
-    selectMut.mutate(candidateId);
   };
 
   const handleReview = (data: ReviewRequest) => {

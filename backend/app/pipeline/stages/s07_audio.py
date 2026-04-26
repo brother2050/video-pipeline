@@ -54,11 +54,51 @@ class AudioStage(BaseStage):
     ) -> list[Candidate]:
         from app.services.generation_service import call_llm_for_json
         from app.services.file_service import save_bytes_to_file
+        from app.ws.hub import ws_hub
+        from datetime import datetime, timezone
 
         project_dir = Path(settings.data_dir) / "projects" / str(project.id)
         project_dir.mkdir(parents=True, exist_ok=True)
 
         candidates: list[Candidate] = []
+        
+        # 初始化进度（每个候选需要完成：1个LLM规划 + 对话音频数 + BGM数 + SFX数）
+        total_tasks = 0
+        for cand_idx in range(num_candidates):
+            # 先获取规划来计算任务数
+            plan = await call_llm_for_json(
+                registry=registry,
+                system_prompt=prompt,
+                user_prompt=f"请生成第 {cand_idx + 1} 个音频方案。",
+                schema=AUDIO_SCHEMA,
+            )
+            total_tasks += 1  # LLM规划
+            total_tasks += len(plan.get("dialogue_plan", []))  # 对话音频
+            total_tasks += len(plan.get("bgm_plan", []))  # 背景音乐
+            total_tasks += len(plan.get("sfx_plan", []))  # 音效
+        
+        stage.progress_total = total_tasks
+        stage.progress_current = 0
+        await db.flush()
+
+        # 发送初始进度
+        await ws_hub.broadcast_to_project(
+            str(project.id),
+            {
+                "type": "stage_progress",
+                "data": {
+                    "project_id": str(project.id),
+                    "stage_type": StageType.AUDIO.value,
+                    "progress_current": 0,
+                    "progress_total": total_tasks,
+                    "status": "generating",
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+        current_task = 0
+        
         for cand_idx in range(num_candidates):
             # 步骤1: LLM 生成音频规划
             plan = await call_llm_for_json(
@@ -66,6 +106,27 @@ class AudioStage(BaseStage):
                 system_prompt=prompt,
                 user_prompt=f"请生成第 {cand_idx + 1} 个音频方案。",
                 schema=AUDIO_SCHEMA,
+            )
+            
+            # 更新进度
+            current_task += 1
+            stage.progress_current = current_task
+            await db.flush()
+            
+            # 发送进度更新
+            await ws_hub.broadcast_to_project(
+                str(project.id),
+                {
+                    "type": "stage_progress",
+                    "data": {
+                        "project_id": str(project.id),
+                        "stage_type": StageType.AUDIO.value,
+                        "progress_current": current_task,
+                        "progress_total": total_tasks,
+                        "status": "generating",
+                    },
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
             )
 
             # 步骤2: 生成对话音频
@@ -99,6 +160,27 @@ class AudioStage(BaseStage):
                     "artifact_id": str(artifact.id),
                 })
 
+                # 更新进度
+                current_task += 1
+                stage.progress_current = current_task
+                await db.flush()
+                
+                # 发送进度更新
+                await ws_hub.broadcast_to_project(
+                    str(project.id),
+                    {
+                        "type": "stage_progress",
+                        "data": {
+                            "project_id": str(project.id),
+                            "stage_type": StageType.AUDIO.value,
+                            "progress_current": current_task,
+                            "progress_total": total_tasks,
+                            "status": "generating",
+                        },
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
+
             # 步骤3: 生成背景音乐
             bgm_supplier = await registry.get_with_fallback(SupplierCapability.BGM)
             bgm_tracks: list[dict[str, Any]] = []
@@ -118,6 +200,27 @@ class AudioStage(BaseStage):
                     metadata={"scene_ref": bgm["scene_ref"], "style": bgm["style"]},
                 )
                 bgm_tracks.append({**bgm, "artifact_id": str(artifact.id)})
+
+                # 更新进度
+                current_task += 1
+                stage.progress_current = current_task
+                await db.flush()
+                
+                # 发送进度更新
+                await ws_hub.broadcast_to_project(
+                    str(project.id),
+                    {
+                        "type": "stage_progress",
+                        "data": {
+                            "project_id": str(project.id),
+                            "stage_type": StageType.AUDIO.value,
+                            "progress_current": current_task,
+                            "progress_total": total_tasks,
+                            "status": "generating",
+                        },
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
 
             # 步骤4: 生成音效
             sfx_supplier = await registry.get_with_fallback(SupplierCapability.SFX)
@@ -139,6 +242,27 @@ class AudioStage(BaseStage):
                     metadata={"scene_ref": sfx["scene_ref"], "description": sfx["description"]},
                 )
                 sfx_tracks.append({**sfx, "artifact_id": str(artifact.id)})
+
+                # 更新进度
+                current_task += 1
+                stage.progress_current = current_task
+                await db.flush()
+                
+                # 发送进度更新
+                await ws_hub.broadcast_to_project(
+                    str(project.id),
+                    {
+                        "type": "stage_progress",
+                        "data": {
+                            "project_id": str(project.id),
+                            "stage_type": StageType.AUDIO.value,
+                            "progress_current": current_task,
+                            "progress_total": total_tasks,
+                            "status": "generating",
+                        },
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
 
             # 步骤5: 组装候选
             content = {

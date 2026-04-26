@@ -46,6 +46,20 @@ async def generate_candidates(
         stage.config = config
     await db.flush()
 
+    # WebSocket 通知：状态更新为 GENERATING
+    await ws_hub.broadcast_to_project(
+        str(project.id),
+        {
+            "type": "stage_status",
+            "data": {
+                "project_id": str(project.id),
+                "stage_type": stage.stage_type,
+                "status": StageStatus.GENERATING.value,
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
     # 获取阶段实现
     stage_impl = STAGE_IMPLEMENTATIONS.get(stage_type)
     if stage_impl is None:

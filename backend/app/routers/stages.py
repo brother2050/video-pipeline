@@ -151,6 +151,7 @@ async def generate_candidates(
     data: StageGenerateRequest,
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[list[CandidateResponse]]:
+    print(f"DEBUG: generate_candidates called with project_id={project_id}, stage_type={stage_type}, data={data}")
     # 获取项目和阶段
     proj_result = await db.execute(select(Project).where(Project.id == project_id))
     project = proj_result.scalar_one()

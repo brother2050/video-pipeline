@@ -27,6 +27,21 @@ export interface WSMessage {
   timestamp: string;
 }
 
+export interface StageProgressData {
+  project_id: string;
+  stage_type: StageType;
+  progress_current: number;
+  progress_total: number;
+  status: string;
+}
+
+export interface StageUpdateData {
+  project_id: string;
+  stage_type: StageType;
+  status: StageStatus;
+  candidate_count: number;
+}
+
 // --- 项目 ---
 export interface ProjectCreate {
   name: string;

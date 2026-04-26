@@ -42,6 +42,9 @@ class FinalCutStage(BaseStage):
         num_candidates: int,
         registry: "SupplierRegistry",
     ) -> list[Candidate]:
+        from app.ws.hub import ws_hub
+        from datetime import datetime, timezone
+
         # 获取阶段8粗剪视频
         rc_stage_result = await db.execute(
             select(Stage).where(
@@ -79,6 +82,27 @@ class FinalCutStage(BaseStage):
 
         ffmpeg_supplier = await registry.get_with_fallback(SupplierCapability.POST)
         project_dir = Path(settings.data_dir) / "projects" / str(project.id)
+
+        # 初始化进度
+        stage.progress_total = num_candidates
+        stage.progress_current = 0
+        await db.flush()
+
+        # 发送初始进度
+        await ws_hub.broadcast_to_project(
+            str(project.id),
+            {
+                "type": "stage_progress",
+                "data": {
+                    "project_id": str(project.id),
+                    "stage_type": StageType.FINAL_CUT.value,
+                    "progress_current": 0,
+                    "progress_total": num_candidates,
+                    "status": "generating",
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
         candidates: list[Candidate] = []
         for cand_idx in range(num_candidates):
@@ -139,6 +163,26 @@ class FinalCutStage(BaseStage):
 
             artifact.candidate_id = candidate.id
             candidates.append(candidate)
+
+            # 更新进度
+            stage.progress_current = cand_idx + 1
+            await db.flush()
+            
+            # 发送进度更新
+            await ws_hub.broadcast_to_project(
+                str(project.id),
+                {
+                    "type": "stage_progress",
+                    "data": {
+                        "project_id": str(project.id),
+                        "stage_type": StageType.FINAL_CUT.value,
+                        "progress_current": cand_idx + 1,
+                        "progress_total": num_candidates,
+                        "status": "generating",
+                    },
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+            )
 
         await db.flush()
         return candidates

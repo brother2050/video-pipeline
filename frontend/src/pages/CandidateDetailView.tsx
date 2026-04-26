@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useCandidateDetail } from "@/hooks/useStages";
+import { useCandidateDetail, useStages } from "@/hooks/useStages";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Download, ZoomIn, ZoomOut, RotateCw, Play } from "lucide-react";
+import { STAGE_LABELS, STAGE_ORDER } from "@/lib/constants";
+import { StageStatus } from "@/types";
+import { StageStatusBadge } from "@/components/shared/StageStatusBadge";
+import { cn } from "@/lib/utils";
 
 export default function CandidateDetailView() {
   const { id: projectId, stageType, candidateId } = useParams<{
@@ -14,6 +18,7 @@ export default function CandidateDetailView() {
   }>();
   const navigate = useNavigate();
   const { data: candidate, isLoading } = useCandidateDetail(projectId || "", stageType || "", candidateId || "");
+  const { data: stages } = useStages(projectId || "");
 
   console.log('CandidateDetailView rendered:', {
     projectId,
@@ -162,6 +167,54 @@ export default function CandidateDetailView() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-6 px-4">
+        {/* 流水线节点导航 */}
+        <Card className="mb-6 p-4">
+          <h3 className="text-sm font-semibold mb-3 text-muted-foreground">流水线节点</h3>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {STAGE_ORDER.map((stage) => {
+              const stageData = stages?.find(s => s.stage_type === stage);
+              const isActive = stage === stageType;
+              const isClickable = stageData?.status !== StageStatus.PENDING;
+              
+              const handleStageClick = () => {
+                console.log('Stage clicked:', {
+                  stage,
+                  isClickable,
+                  projectId,
+                  stageData,
+                  currentCandidateId: stageData?.current_candidate_id
+                });
+                
+                if (!isClickable || !projectId) return;
+                
+                // 跳转到阶段审核页面
+                console.log('Navigating to stage review:', `/projects/${projectId}/stages/${stage}`);
+                navigate(`/projects/${projectId}/stages/${stage}`);
+              };
+              
+              return (
+                <button
+                  key={stage}
+                  onClick={handleStageClick}
+                  disabled={!isClickable}
+                  className={cn(
+                    "flex-shrink-0 px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium",
+                    isActive 
+                      ? "border-primary bg-primary/10 text-primary" 
+                      : "border-border bg-background hover:border-primary/50 hover:bg-primary/5",
+                    !isClickable && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs">{STAGE_LABELS[stage]}</span>
+                    <StageStatusBadge status={stageData?.status ?? StageStatus.PENDING} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -206,7 +259,18 @@ export default function CandidateDetailView() {
 
               <div className="flex items-center justify-center min-h-[60vh] bg-muted/30 rounded-lg">
                 {currentArtifact ? getMediaComponent(currentArtifact) : (
-                  <p className="text-muted-foreground">暂无媒体文件</p>
+                  <div className="w-full p-6">
+                    {artifacts.length === 0 && candidate.content ? (
+                      <div className="text-left">
+                        <h3 className="text-lg font-semibold mb-4">候选内容</h3>
+                        <pre className="text-sm whitespace-pre-wrap bg-background p-4 rounded-lg border overflow-auto max-h-[50vh]">
+                          {JSON.stringify(candidate.content, null, 2)}
+                        </pre>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">暂无媒体文件</p>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -278,27 +342,31 @@ export default function CandidateDetailView() {
             <Card className="p-6">
               <h3 className="text-sm font-semibold mb-4 text-muted-foreground">文件列表</h3>
               <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                {artifacts.map((artifact, index) => (
-                  <div
-                    key={artifact.id}
-                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                      index === currentImageIndex
-                        ? 'bg-primary/10 border-primary'
-                        : 'bg-muted/30 hover:bg-muted/50'
-                    }`}
-                    onClick={() => setCurrentImageIndex(index)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-xs">
-                        {artifact.file_type}
-                      </Badge>
-                      <span className="text-sm">{artifact.file_path.split('/').pop()}</span>
+                {artifacts.length > 0 ? (
+                  artifacts.map((artifact, index) => (
+                    <div
+                      key={artifact.id}
+                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                        index === currentImageIndex
+                          ? 'bg-primary/10 border-primary'
+                          : 'bg-muted/30 hover:bg-muted/50'
+                      }`}
+                      onClick={() => setCurrentImageIndex(index)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-xs">
+                          {artifact.file_type}
+                        </Badge>
+                        <span className="text-sm">{artifact.file_path.split('/').pop()}</span>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleDownload(artifact)}>
+                        <Download className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleDownload(artifact)}>
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">暂无文件</p>
+                )}
               </div>
             </Card>
 

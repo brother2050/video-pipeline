@@ -9,27 +9,82 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useProject } from "@/hooks/useProjects";
 import { useStages } from "@/hooks/useStages";
 import { useWebSocketStore } from "@/stores/websocketStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { StageStatusBadge } from "@/components/shared/StageStatusBadge";
 import { ProjectNav } from "@/components/layout/ProjectNav";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { StageStatus } from "@/types";
+import { StageStatus, type StageProgressData } from "@/types";
 import { CheckCircle, Clock, AlertCircle, Loader2 } from "lucide-react";
 
 export default function PipelineView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const subscribe = useWebSocketStore((s) => s.subscribe);
   const unsubscribe = useWebSocketStore((s) => s.unsubscribe);
+  const lastMessage = useWebSocketStore((s) => s.lastMessage);
+  const connected = useWebSocketStore((s) => s.connected);
 
   const { data: project } = useProject(id || "");
   const { data: stages } = useStages(id || "");
 
+  const [stageProgress, setStageProgress] = useState<Record<string, StageProgressData>>({});
+
   useEffect(() => {
-    if (id) subscribe(id);
-    return () => { if (id) unsubscribe(id); };
+    console.log('PipelineView: WebSocket connected:', connected);
+    if (id) {
+      console.log('PipelineView: Subscribing to project:', id);
+      subscribe(id);
+    }
+    return () => { 
+      if (id) {
+        console.log('PipelineView: Unsubscribing from project:', id);
+        unsubscribe(id);
+      }
+    };
   }, [id, subscribe, unsubscribe]);
+
+  useEffect(() => {
+    console.log('PipelineView: WebSocket message received:', lastMessage);
+    if (lastMessage?.type === "stage_progress") {
+      const data = lastMessage.data as Record<string, unknown>;
+      console.log('PipelineView: Stage progress data:', data);
+      console.log('PipelineView: Current project id:', id);
+      console.log('PipelineView: Project id match:', data.project_id === id);
+      console.log('PipelineView: Stage type:', data.stage_type);
+      console.log('PipelineView: Progress current:', data.progress_current);
+      console.log('PipelineView: Progress total:', data.progress_total);
+      console.log('PipelineView: Status:', data.status);
+      
+      if (data.project_id === id && data.stage_type && data.progress_current !== undefined && data.progress_total !== undefined) {
+        const progressData: StageProgressData = {
+          project_id: String(data.project_id),
+          stage_type: data.stage_type as any,
+          progress_current: Number(data.progress_current),
+          progress_total: Number(data.progress_total),
+          status: String(data.status || "generating")
+        };
+        console.log('PipelineView: Setting progress for stage:', progressData.stage_type, progressData);
+        setStageProgress(prev => ({
+          ...prev,
+          [progressData.stage_type]: progressData
+        }));
+      } else {
+        console.log('PipelineView: Stage progress data validation failed');
+      }
+    } else if (lastMessage?.type === "stage_status") {
+      const data = lastMessage.data as Record<string, unknown>;
+      console.log('PipelineView: Stage status update:', data);
+      if (data.project_id === id && data.stage_type && data.status) {
+        console.log('PipelineView: Stage status updated:', data.stage_type, data.status);
+        // 重新获取阶段数据以更新状态
+        queryClient.invalidateQueries({ queryKey: ["stages", id] });
+        queryClient.invalidateQueries({ queryKey: ["stage", id, data.stage_type] });
+      }
+    }
+  }, [lastMessage, id, queryClient]);
 
   if (!project || !stages) {
     return <div className="text-center py-12 text-muted-foreground">加载中...</div>;
@@ -37,6 +92,9 @@ export default function PipelineView() {
 
   const stageMap = new Map(stages.map((s) => [s.stage_type, s]));
   const summaryMap = new Map((project.stages_summary || []).map((s) => [s.stage_type, s]));
+  console.log('PipelineView: Rendering stages, stageMap size:', stageMap.size);
+  console.log('PipelineView: Stage progress state:', stageProgress);
+  console.log('PipelineView: Summary map:', summaryMap);
 
   const getStatusIcon = (status: StageStatus) => {
     switch (status) {
@@ -71,6 +129,8 @@ export default function PipelineView() {
             const stage = stageMap.get(stageType);
             const status = stage?.status ?? StageStatus.PENDING;
             const isClickable = status !== StageStatus.PENDING;
+            console.log(`PipelineView: Rendering stage ${stageType}, status: ${status}, isClickable: ${isClickable}`);
+            console.log(`PipelineView: Stage progress for ${stageType}:`, stageProgress[stageType]);
 
             return (
               <div key={stageType} className="flex flex-col items-center">
@@ -94,6 +154,13 @@ export default function PipelineView() {
                 {/* 标签 */}
                 <span className="text-xs font-medium mt-2 text-center">{STAGE_LABELS[stageType]}</span>
                 <span className="text-[10px] text-muted-foreground">{idx + 1}/9</span>
+
+                {/* 进度显示 */}
+                {stageProgress[stageType] && (
+                  <div className="mt-1 text-[10px] text-primary font-medium">
+                    {stageProgress[stageType].progress_current}/{stageProgress[stageType].progress_total}
+                  </div>
+                )}
 
                 {/* 候选数 */}
                 {summaryMap.has(stageType) && summaryMap.get(stageType)!.has_candidates && (

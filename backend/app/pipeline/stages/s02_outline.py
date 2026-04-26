@@ -50,7 +50,32 @@ class OutlineStage(BaseStage):
         registry: "SupplierRegistry",
     ) -> list[Candidate]:
         from app.services.generation_service import call_llm_for_json
+        from app.ws.hub import ws_hub
+        from datetime import datetime, timezone
+
         candidates: list[Candidate] = []
+        
+        # 初始化进度
+        stage.progress_total = num_candidates
+        stage.progress_current = 0
+        await db.flush()
+
+        # 发送初始进度
+        await ws_hub.broadcast_to_project(
+            str(project.id),
+            {
+                "type": "stage_progress",
+                "data": {
+                    "project_id": str(project.id),
+                    "stage_type": StageType.OUTLINE.value,
+                    "progress_current": 0,
+                    "progress_total": num_candidates,
+                    "status": "generating",
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
         for i in range(num_candidates):
             content = await call_llm_for_json(
                 registry=registry,
@@ -61,5 +86,26 @@ class OutlineStage(BaseStage):
             candidate = Candidate(stage_id=stage.id, content=content, metadata_={"candidate_index": i})
             db.add(candidate)
             candidates.append(candidate)
+
+            # 更新进度
+            stage.progress_current = i + 1
+            await db.flush()
+            
+            # 发送进度更新
+            await ws_hub.broadcast_to_project(
+                str(project.id),
+                {
+                    "type": "stage_progress",
+                    "data": {
+                        "project_id": str(project.id),
+                        "stage_type": StageType.OUTLINE.value,
+                        "progress_current": i + 1,
+                        "progress_total": num_candidates,
+                        "status": "generating",
+                    },
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+
         await db.flush()
         return candidates

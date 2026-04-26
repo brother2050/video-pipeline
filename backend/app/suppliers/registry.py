@@ -21,7 +21,16 @@ from app.exceptions import AllSuppliersExhausted
 def _load_workflow_from_file(path: str) -> dict[str, Any] | None:
     """Load workflow JSON from file path."""
     try:
+        # 获取项目根目录（从 registry.py 的位置推导）
+        import os
+        current_dir = Path(__file__).parent
+        project_root = current_dir.parent.parent
+        
+        # 如果是相对路径，相对于项目根目录解析
         file_path = Path(path)
+        if not file_path.is_absolute():
+            file_path = project_root / file_path
+        
         if file_path.exists():
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)

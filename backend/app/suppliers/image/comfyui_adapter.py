@@ -183,7 +183,7 @@ class ComfyUIAdapter(ImageBaseSupplier):
         width: int = 1024,
         height: int = 1024,
         num_images: int = 1,
-        steps: int = 30,
+        steps: int = 8,
         cfg_scale: float = 7.0,
         seed: int = -1,
         checkpoint: str = "",
@@ -213,7 +213,7 @@ class ComfyUIAdapter(ImageBaseSupplier):
         modified_workflow = parser.apply_overrides(overrides)
         result = await self._client.queue_prompt(modified_workflow)
         prompt_id = result.get("prompt_id", "")
-        entry = await self._client.wait_for_completion(prompt_id, timeout=900)
+        entry = await self._client.wait_for_completion(prompt_id, timeout=1200)
         outputs = ComfyUIClient.extract_outputs(entry)
 
         image_bytes_list: list[bytes] = []

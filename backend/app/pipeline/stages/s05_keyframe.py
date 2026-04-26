@@ -67,6 +67,16 @@ class KeyframeStage(BaseStage):
         candidates: list[Candidate] = []
         for cand_idx in range(num_candidates):
             generated_images: list[dict[str, Any]] = []
+            
+            # 先创建 Candidate 对象
+            candidate = Candidate(
+                stage_id=stage.id,
+                content={"generated_images": []},
+                metadata_={"candidate_index": cand_idx},
+            )
+            db.add(candidate)
+            await db.flush()
+            
             project_dir = Path(settings.data_dir) / "projects" / str(project.id)
             project_dir.mkdir(parents=True, exist_ok=True)
 
@@ -85,7 +95,7 @@ class KeyframeStage(BaseStage):
                     file_path.write_bytes(img_bytes)
 
                     artifact = Artifact(
-                        candidate_id=uuid.uuid4(),
+                        candidate_id=candidate.id,
                         file_type=FileType.IMAGE.value,
                         file_path=str(file_path.relative_to(Path(settings.data_dir))),
                         file_size=len(img_bytes),
@@ -104,24 +114,11 @@ class KeyframeStage(BaseStage):
                         "artifact_id": str(artifact.id),
                     })
 
-            candidate = Candidate(
-                stage_id=stage.id,
-                content={"generated_images": generated_images},
-                metadata_={"candidate_index": cand_idx},
-            )
-            db.add(candidate)
+            # 更新 candidate 的 content
+            candidate.content = {"generated_images": generated_images}
             await db.flush()
-
-            # 关联 artifacts 到 candidate
-            for artifact_data in generated_images:
-                art_result = await db.execute(
-                    select(Artifact).where(Artifact.id == artifact_data["artifact_id"])
-                )
-                art = art_result.scalar_one_or_none()
-                if art:
-                    art.candidate_id = candidate.id
 
             candidates.append(candidate)
 
-        await db.flush()
+        await db.commit()
         return candidates

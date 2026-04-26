@@ -25,9 +25,9 @@ capabilities:
         is_local: false
         priority: 1
       - provider: "comfyui"
-        base_url: "http://127.0.0.1:8188"
-        is_local: true
-        priority: 2
+        base_url: "https://80eeb14123154dc780b2c11014a36942--8188.app-shanghai2.cloudstudio.club"
+        is_local: false
+        priority: 1
       - provider: "sdwebui"
         base_url: "http://127.0.0.1:7860"
         is_local: true

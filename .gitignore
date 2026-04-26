@@ -40,3 +40,6 @@ nohup.out
 # Build
 backend/data/
 frontend/dist/
+
+
+backend/config/

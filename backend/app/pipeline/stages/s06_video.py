@@ -4,7 +4,7 @@
 """
 
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from pathlib import Path
 
 from sqlalchemy import select
@@ -74,7 +74,8 @@ class VideoStage(BaseStage):
         kf_candidate = kf_candidate_result.scalar_one()
         kf_images = {img["shot_ref"]: img for img in kf_candidate.content.get("generated_images", [])}
 
-        video_supplier = await registry.get_with_fallback(SupplierCapability.VIDEO)
+        from app.suppliers.base import VideoBaseSupplier
+        video_supplier = cast(VideoBaseSupplier, await registry.get_with_fallback(SupplierCapability.VIDEO))
 
         # 初始化进度
         total_tasks = num_candidates * len(shots)

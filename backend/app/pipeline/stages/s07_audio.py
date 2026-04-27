@@ -5,7 +5,7 @@ LLM 生成规划 → 三种供应商分别生成音频。
 
 import json
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from pathlib import Path
 
 from sqlalchemy import select
@@ -21,6 +21,7 @@ from app.pipeline.prompts import AUDIO_TEMPLATE, AUDIO_EXAMPLE
 
 if TYPE_CHECKING:
     from app.suppliers.registry import SupplierRegistry
+    from app.suppliers.base import TTSBaseSupplier, BGMBaseSupplier, SFXBaseSupplier
 from app.config import settings
 
 
@@ -130,7 +131,8 @@ class AudioStage(BaseStage):
             )
 
             # 步骤2: 生成对话音频
-            tts_supplier = await registry.get_with_fallback(SupplierCapability.TTS)
+            from app.suppliers.base import TTSBaseSupplier
+            tts_supplier = cast(TTSBaseSupplier, await registry.get_with_fallback(SupplierCapability.TTS))
             dialogue_tracks: list[dict[str, Any]] = []
             for dlg in plan.get("dialogue_plan", []):
                 voice_id = dlg.get("voice_id", "")
@@ -182,7 +184,8 @@ class AudioStage(BaseStage):
                 )
 
             # 步骤3: 生成背景音乐
-            bgm_supplier = await registry.get_with_fallback(SupplierCapability.BGM)
+            from app.suppliers.base import BGMBaseSupplier
+            bgm_supplier = cast(BGMBaseSupplier, await registry.get_with_fallback(SupplierCapability.BGM))
             bgm_tracks: list[dict[str, Any]] = []
             for bgm in plan.get("bgm_plan", []):
                 audio_bytes = await bgm_supplier.generate_bgm(
@@ -223,7 +226,8 @@ class AudioStage(BaseStage):
                 )
 
             # 步骤4: 生成音效
-            sfx_supplier = await registry.get_with_fallback(SupplierCapability.SFX)
+            from app.suppliers.base import SFXBaseSupplier
+            sfx_supplier = cast(SFXBaseSupplier, await registry.get_with_fallback(SupplierCapability.SFX))
             sfx_tracks: list[dict[str, Any]] = []
             for sfx in plan.get("sfx_plan", []):
                 audio_bytes = await sfx_supplier.generate_sfx(

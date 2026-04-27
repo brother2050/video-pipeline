@@ -4,7 +4,7 @@
 """
 
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from pathlib import Path
 
 from sqlalchemy import select
@@ -19,6 +19,7 @@ from app.config import settings
 
 if TYPE_CHECKING:
     from app.suppliers.registry import SupplierRegistry
+    from app.suppliers.base import PostBaseSupplier
 
 
 class RoughCutStage(BaseStage):
@@ -76,7 +77,8 @@ class RoughCutStage(BaseStage):
         bgm_tracks = audio_candidate.content.get("bgm_tracks", [])
         sfx_tracks = audio_candidate.content.get("sfx_tracks", [])
 
-        ffmpeg_supplier = await registry.get_with_fallback(SupplierCapability.POST)
+        from app.suppliers.base import PostBaseSupplier
+        ffmpeg_supplier = cast(PostBaseSupplier, await registry.get_with_fallback(SupplierCapability.POST))
         project_dir = Path(settings.data_dir) / "projects" / str(project.id)
 
         # 初始化进度

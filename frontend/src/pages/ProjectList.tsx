@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { formatDate } from "@/lib/utils";
@@ -56,6 +56,7 @@ export default function ProjectList() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>新建项目</DialogTitle>
+              <DialogDescription>填写项目信息以创建新的影视项目</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>

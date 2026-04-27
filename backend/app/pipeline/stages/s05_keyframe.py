@@ -4,7 +4,7 @@
 """
 
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from pathlib import Path
 
 from sqlalchemy import select
@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 
 if TYPE_CHECKING:
     from app.suppliers.registry import SupplierRegistry
+    from app.suppliers.base import ImageBaseSupplier
 
 
 class KeyframeStage(BaseStage):
@@ -64,7 +65,8 @@ class KeyframeStage(BaseStage):
         shots = sb.content.get("shots", [])
 
         # 2. 对每个 shot 生成图片
-        image_supplier = await registry.get_with_fallback(SupplierCapability.IMAGE)
+        from app.suppliers.base import ImageBaseSupplier
+        image_supplier = cast(ImageBaseSupplier, await registry.get_with_fallback(SupplierCapability.IMAGE))
 
         # 初始化进度
         total_tasks = num_candidates * len(shots)
@@ -112,6 +114,7 @@ class KeyframeStage(BaseStage):
                     width=config.get("width", 1536),
                     height=config.get("height", 864),
                     num_images=1,
+                    steps=config.get("steps", 30),
                 )
                 if img_bytes_list:
                     img_bytes = img_bytes_list[0]

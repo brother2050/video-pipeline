@@ -183,7 +183,7 @@ class ComfyUIAdapter(ImageBaseSupplier):
         width: int = 1024,
         height: int = 1024,
         num_images: int = 1,
-        steps: int = 8,
+        steps: int = 30,
         cfg_scale: float = 7.0,
         seed: int = -1,
         checkpoint: str = "",

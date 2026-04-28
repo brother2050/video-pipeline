@@ -1,6 +1,6 @@
 """
 数据库连接模块。
-支持 SQLite（开发）和 PostgreSQL（生产），通过 database_url 自动判断。
+支持 PostgreSQL（生产）。
 """
 
 from collections.abc import AsyncGenerator
@@ -20,14 +20,11 @@ class Base(DeclarativeBase):
     pass
 
 
-# 根据 URL 前缀决定是否需要 pool 参数
-_is_sqlite = settings.database_url.startswith("sqlite")
-
 engine = create_async_engine(
     settings.database_url,
     echo=settings.debug,
-    # SQLite 不支持 pool_size/max_overflow
-    **({} if _is_sqlite else {"pool_size": 10, "max_overflow": 20}),
+    pool_size=10,
+    max_overflow=20,
 )
 
 async_session_factory = async_sessionmaker(

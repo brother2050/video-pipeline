@@ -15,6 +15,10 @@ const ProjectSettings = lazy(() => import("@/pages/ProjectSettings"));
 const NodeManager = lazy(() => import("@/pages/NodeManager"));
 const SupplierConfig = lazy(() => import("@/pages/SupplierConfig"));
 const Settings = lazy(() => import("@/pages/Settings"));
+const CharacterStates = lazy(() => import("@/pages/CharacterStates"));
+const SceneAssets = lazy(() => import("@/pages/SceneAssets"));
+const PacingTemplates = lazy(() => import("@/pages/PacingTemplates"));
+const ComplianceCheck = lazy(() => import("@/pages/ComplianceCheck"));
 
 function LoadingFallback() {
   return (
@@ -38,6 +42,10 @@ function AppInner() {
           <Route path="/projects/:id/stages/:stageType" element={<Suspense fallback={<LoadingFallback />}><StageReview /></Suspense>} />
           <Route path="/projects/:id/stages/:stageType/candidates/:candidateId" element={<Suspense fallback={<LoadingFallback />}><CandidateDetailView /></Suspense>} />
           <Route path="/projects/:id/settings" element={<Suspense fallback={<LoadingFallback />}><ProjectSettings /></Suspense>} />
+          <Route path="/projects/:id/characters" element={<Suspense fallback={<LoadingFallback />}><CharacterStates /></Suspense>} />
+          <Route path="/projects/:id/scenes" element={<Suspense fallback={<LoadingFallback />}><SceneAssets /></Suspense>} />
+          <Route path="/projects/:id/pacing" element={<Suspense fallback={<LoadingFallback />}><PacingTemplates /></Suspense>} />
+          <Route path="/projects/:id/compliance" element={<Suspense fallback={<LoadingFallback />}><ComplianceCheck /></Suspense>} />
           <Route path="/nodes" element={<Suspense fallback={<LoadingFallback />}><NodeManager /></Suspense>} />
           <Route path="/suppliers" element={<Suspense fallback={<LoadingFallback />}><SupplierConfig /></Suspense>} />
           <Route path="/settings" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />

@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
 
     # --- 数据库 ---
-    database_url: str = "sqlite+aiosqlite:///data/db/pipeline.db"
+    database_url: str = "postgresql+asyncpg://user:password@localhost:5432/videopipeline"
 
     # --- 存储 ---
     data_dir: str = "data"
@@ -62,7 +62,7 @@ class Settings(BaseSettings):
             overrides["cors_origins"] = server.get("cors_origins", ["http://localhost:5173"])
 
             db = data.get("database", {})
-            overrides["database_url"] = db.get("url", "sqlite+aiosqlite:///data/db/pipeline.db")
+            overrides["database_url"] = db.get("url", "postgresql+asyncpg://user:password@localhost:5432/videopipeline")
 
             storage = data.get("storage", {})
             overrides["data_dir"] = storage.get("data_dir", "data")
@@ -77,6 +77,8 @@ class Settings(BaseSettings):
             overrides["default_local_timeout"] = sup.get("default_local_timeout", 300)
             overrides["default_retry_count"] = sup.get("default_retry_count", 2)
 
+        # 创建实例，让 BaseSettings 自动加载环境变量
+        # 环境变量优先级高于 YAML 配置
         return cls(**overrides)
 
 

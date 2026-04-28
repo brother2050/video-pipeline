@@ -77,7 +77,7 @@ class OllamaAdapter(LLMBaseSupplier):
             "format": schema,
         }
         payload.update(kwargs)
-        async with self._client.stream("POST", "/api/chat", json=payload) as resp:
+        async with self._client.stream("POST", "/api/chat", json=payload, timeout=600.0) as resp:
             resp.raise_for_status()
             async for line in resp.aiter_lines():
                 if not line.strip():

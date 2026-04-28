@@ -6,8 +6,7 @@ server:
     - "http://localhost:5173"
 
 database:
-
-  url: "sqlite+aiosqlite:///data/db/pipeline.db"
+  url: "postgresql+asyncpg://andrew:201313030065@localhost:5432/videopipeline"
 
 storage:
   data_dir: "data"

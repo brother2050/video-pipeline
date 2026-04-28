@@ -8,6 +8,10 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "流水线", path: "pipeline" },
+  { label: "角色状态", path: "characters" },
+  { label: "场景资产", path: "scenes" },
+  { label: "节奏模板", path: "pacing" },
+  { label: "合规检查", path: "compliance" },
   { label: "设置", path: "settings" },
 ];
 

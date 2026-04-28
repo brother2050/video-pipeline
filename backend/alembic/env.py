@@ -3,16 +3,45 @@ Alembic 环境配置。
 """
 
 import asyncio
+import os
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# 添加 backend 目录到 Python 路径
+backend_dir = Path(__file__).parent.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+# 导入配置和数据库
+from app.config import settings
 from app.database import Base
-from app.models import *  # noqa: F401, F403 - 确保所有模型被导入
+from app.models import (
+    Project,
+    ProjectSetting,
+    Stage,
+    Candidate,
+    Artifact,
+    Version,
+    Node,
+    CapabilityConfig,
+    CharacterState,
+    SceneAsset,
+    PacingTemplate,
+    ConsistencyCheck,
+    ComplianceReport,
+)
 
 config = context.config
+
+# 如果环境变量中有数据库 URL，使用环境变量
+if settings.database_url:
+    config.set_main_option("sqlalchemy.url", settings.database_url)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 

@@ -8,6 +8,13 @@ from app.models.candidate import Candidate, Artifact
 from app.models.version import Version
 from app.models.node import Node
 from app.models.supplier import CapabilityConfig
+from app.models.continuity import (
+    CharacterState,
+    SceneAsset,
+    PacingTemplate,
+    ConsistencyCheck,
+    ComplianceReport,
+)
 
 __all__ = [
     "Project",
@@ -18,4 +25,9 @@ __all__ = [
     "Version",
     "Node",
     "CapabilityConfig",
+    "CharacterState",
+    "SceneAsset",
+    "PacingTemplate",
+    "ConsistencyCheck",
+    "ComplianceReport",
 ]

@@ -8,7 +8,7 @@ Create Date: 2024-01-01 00:00:00.000000
 from typing import Sequence, Union
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import sqlite, postgresql
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -19,13 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 使用 JSON 而不是 JSONB，以兼容 SQLite
-    json_type = sa.JSON if op.get_context().dialect.name == 'sqlite' else postgresql.JSONB
-    
     op.create_table(
         "project_settings",
-        sa.Column("id", sa.UUID(as_uuid=True), primary_key=True),
-        sa.Column("project_id", sa.UUID(as_uuid=True),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+        sa.Column("project_id", postgresql.UUID(as_uuid=True),
                   sa.ForeignKey("projects.id", ondelete="CASCADE"),
                   unique=True, nullable=False),
         sa.Column("default_num_candidates", sa.Integer, server_default="3"),
@@ -49,9 +46,9 @@ def upgrade() -> None:
         sa.Column("color_grade_intensity", sa.Float, server_default="0.8"),
         sa.Column("vignette_intensity", sa.Float, server_default="0.3"),
         sa.Column("grain_intensity", sa.Float, server_default="0.05"),
-        sa.Column("preferred_suppliers", json_type, server_default="{}"),
+        sa.Column("preferred_suppliers", postgresql.JSONB, server_default="{}"),
         sa.Column("comfyui_workflow_path", sa.String(500), server_default=""),
-        sa.Column("extra", json_type, server_default="{}"),
+        sa.Column("extra", postgresql.JSONB, server_default="{}"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )

@@ -9,7 +9,7 @@ source .venv/bin/activate
 
 celery -A app.celery_app worker \
     --loglevel=info \
-    --queue=pipeline \
+    --queues=pipeline \
     --concurrency=4 \
     --max-tasks-per-child=100 \
     --time-limit=3600 \

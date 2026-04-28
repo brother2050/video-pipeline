@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.celery_app import celery_app
 from app.database import async_session_factory
-from app.models.pipeline import Candidate, Stage
+from app.models import Candidate, Stage
 from app.suppliers.registry import SupplierRegistry
 
 logger = logging.getLogger(__name__)

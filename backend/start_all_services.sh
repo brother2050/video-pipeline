@@ -42,7 +42,7 @@ echo "3. 启动 Celery Workers..."
 echo "   - 启动流水线队列 Worker..."
 celery -A app.celery_app worker \
     --loglevel=info \
-    --queue=pipeline \
+    --queues=pipeline \
     --concurrency=4 \
     --max-tasks-per-child=100 \
     --time-limit=3600 \
@@ -55,7 +55,7 @@ celery -A app.celery_app worker \
 echo "   - 启动合规检查队列 Worker..."
 celery -A app.celery_app worker \
     --loglevel=info \
-    --queue=compliance \
+    --queues=compliance \
     --concurrency=2 \
     --max-tasks-per-child=100 \
     --time-limit=3600 \
@@ -68,7 +68,7 @@ celery -A app.celery_app worker \
 echo "   - 启动连续性检查队列 Worker..."
 celery -A app.celery_app worker \
     --loglevel=info \
-    --queue=continuity \
+    --queues=continuity \
     --concurrency=2 \
     --max-tasks-per-child=100 \
     --time-limit=3600 \

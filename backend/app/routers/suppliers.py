@@ -34,8 +34,14 @@ def _model_to_response(config: CapabilityConfigModel) -> CapabilityConfigRespons
         SupplierSlot(**s) if isinstance(s, dict) else s
         for s in (config.suppliers or [])
     ]
+    
+    try:
+        capability = SupplierCapability(config.capability)
+    except ValueError:
+        capability = SupplierCapability.LLM
+    
     return CapabilityConfigResponse(
-        capability=SupplierCapability(config.capability),
+        capability=capability,
         suppliers=suppliers,
         retry_count=config.retry_count,
         timeout_seconds=config.timeout_seconds,

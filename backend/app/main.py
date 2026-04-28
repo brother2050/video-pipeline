@@ -38,29 +38,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Database initialized successfully")
 
     # 初始化供应商注册表
-    from sqlalchemy import select
-    from app.models.supplier import CapabilityConfig
-    from app.schemas.supplier import CapabilityConfigResponse, SupplierSlot
     from app.suppliers.registry import SupplierRegistry
+    from app.utils.supplier_utils import load_supplier_registry_from_db
 
     logger.info("Initializing supplier registry...")
-    registry = SupplierRegistry()
     async with async_session_factory() as db:
-        result = await db.execute(select(CapabilityConfig))
-        configs = result.scalars().all()
-        if configs:
-            schema_configs = [
-                CapabilityConfigResponse(
-                    capability=c.capability,
-                    suppliers=[SupplierSlot(**s) for s in c.suppliers],
-                    retry_count=c.retry_count,
-                    timeout_seconds=c.timeout_seconds,
-                    local_timeout_seconds=c.local_timeout_seconds,
-                )
-                for c in configs
-            ]
-            await registry.initialize(schema_configs)
-            logger.info(f"Supplier registry initialized with {len(schema_configs)} capabilities")
+        registry = await load_supplier_registry_from_db(db)
     app.state.supplier_registry = registry
 
     # 启动 WebSocket 心跳

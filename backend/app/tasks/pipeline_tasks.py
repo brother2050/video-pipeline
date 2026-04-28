@@ -14,8 +14,11 @@ from app.database import async_session_factory
 from app.logging_config import AsyncLogger, PipelineLogger
 from app.models import Candidate, Stage
 from app.suppliers.registry import SupplierRegistry
+from app.utils.supplier_utils import load_supplier_registry_from_db
 
 logger = logging.getLogger(__name__)
+
+
 @celery_app.task(bind=True, name="app.tasks.pipeline_tasks.generate_candidates", queue="pipeline")
 def generate_candidates(
     self,
@@ -52,30 +55,10 @@ def generate_candidates(
     
     async def _run():
         async with async_session_factory() as db:
-            from app.suppliers.registry import SupplierRegistry
             from app.models.project import Project
-            from app.models.supplier import CapabilityConfig
-            from app.schemas.supplier import CapabilityConfigResponse, SupplierSlot
             
             registry = SupplierRegistry()
-            
-            # 从数据库加载供应商配置
-            result = await db.execute(select(CapabilityConfig))
-            configs = result.scalars().all()
-            if configs:
-                from app.schemas.enums import SupplierCapability
-                schema_configs = [
-                    CapabilityConfigResponse(
-                        capability=SupplierCapability(c.capability),
-                        suppliers=[SupplierSlot(**s) for s in c.suppliers],
-                        retry_count=c.retry_count,
-                        timeout_seconds=c.timeout_seconds,
-                        local_timeout_seconds=c.local_timeout_seconds,
-                    )
-                    for c in configs
-                ]
-                await registry.initialize(schema_configs)
-                logger.info(f"Supplier registry initialized with {len(schema_configs)} capabilities")
+            await load_supplier_registry_from_db(db, registry)
             
             proj_result = await db.execute(select(Project).where(Project.id == uuid.UUID(project_id)))
             project = proj_result.scalar_one()
@@ -146,30 +129,10 @@ def process_stage(
     
     async def _run():
         async with async_session_factory() as db:
-            from app.suppliers.registry import SupplierRegistry
             from app.models.project import Project
-            from app.models.supplier import CapabilityConfig
-            from app.schemas.supplier import CapabilityConfigResponse, SupplierSlot
             
             registry = SupplierRegistry()
-            
-            # 从数据库加载供应商配置
-            result = await db.execute(select(CapabilityConfig))
-            configs = result.scalars().all()
-            if configs:
-                from app.schemas.enums import SupplierCapability
-                schema_configs = [
-                    CapabilityConfigResponse(
-                        capability=SupplierCapability(c.capability),
-                        suppliers=[SupplierSlot(**s) for s in c.suppliers],
-                        retry_count=c.retry_count,
-                        timeout_seconds=c.timeout_seconds,
-                        local_timeout_seconds=c.local_timeout_seconds,
-                    )
-                    for c in configs
-                ]
-                await registry.initialize(schema_configs)
-                logger.info(f"Supplier registry initialized with {len(schema_configs)} capabilities")
+            await load_supplier_registry_from_db(db, registry)
             
             proj_result = await db.execute(select(Project).where(Project.id == uuid.UUID(project_id)))
             project = proj_result.scalar_one()
@@ -237,30 +200,10 @@ def generate_artifact(
     
     async def _run():
         async with async_session_factory() as db:
-            from app.suppliers.registry import SupplierRegistry
             from app.models.project import Project
-            from app.models.supplier import CapabilityConfig
-            from app.schemas.supplier import CapabilityConfigResponse, SupplierSlot
             
             registry = SupplierRegistry()
-            
-            # 从数据库加载供应商配置
-            result = await db.execute(select(CapabilityConfig))
-            configs = result.scalars().all()
-            if configs:
-                from app.schemas.enums import SupplierCapability
-                schema_configs = [
-                    CapabilityConfigResponse(
-                        capability=SupplierCapability(c.capability),
-                        suppliers=[SupplierSlot(**s) for s in c.suppliers],
-                        retry_count=c.retry_count,
-                        timeout_seconds=c.timeout_seconds,
-                        local_timeout_seconds=c.local_timeout_seconds,
-                    )
-                    for c in configs
-                ]
-                await registry.initialize(schema_configs)
-                logger.info(f"Supplier registry initialized with {len(schema_configs)} capabilities")
+            await load_supplier_registry_from_db(db, registry)
             
             try:
                 logger.info(f"开始生成产物 - 候选: {candidate_id}, 类型: {artifact_type}")

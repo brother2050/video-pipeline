@@ -10,7 +10,7 @@ import { useParams } from "react-router-dom";
 import { useProject } from "@/hooks/useProjects";
 import {
   useStage, useCandidates, useGenerate,
-  useReview, useRollback, useVersions, useUpdatePrompt,
+  useReview, useRollback, useVersions, useUpdatePrompt, useTaskStatus,
 } from "@/hooks/useStages";
 import { useWebSocketStore } from "@/stores/websocketStore";
 import { Card } from "@/components/ui/card";
@@ -40,12 +40,14 @@ export default function StageReview() {
   const { data: versions } = useVersions(id || "", stageType || "");
 
   const generateMut = useGenerate(id || "", stageType || "");
+  const taskStatusMut = useTaskStatus(id || "", stageType || "");
   const reviewMut = useReview(id || "", stageType || "");
   const rollbackMut = useRollback(id || "", stageType || "");
   const updatePromptMut = useUpdatePrompt(id || "", stageType || "");
 
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [numCandidates, setNumCandidates] = useState(3);
+  const [taskId, setTaskId] = useState<string | null>(null);
 
   const handleSelect = (candidateId: string) => {
     setSelectedCandidateId(candidateId);
@@ -62,6 +64,25 @@ export default function StageReview() {
       setSelectedCandidateId(stage.current_candidate_id);
     }
   }, [stage?.current_candidate_id]);
+
+  // 轮询任务状态
+  useEffect(() => {
+    if (!taskId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const status = await taskStatusMut.mutateAsync(taskId);
+        if (status.status === "success" || status.status === "error") {
+          clearInterval(pollInterval);
+          setTaskId(null);
+        }
+      } catch (error) {
+        console.error("Failed to check task status:", error);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [taskId]);
 
   if (stageLoading || !stage || !id || !stageType) {
     return <div className="text-center py-12 text-muted-foreground">加载中...</div>;
@@ -80,7 +101,10 @@ export default function StageReview() {
   const rollbackStages = allStageTypes.slice(0, currentIdx);
 
   const handleGenerate = async () => {
-    await generateMut.mutateAsync({ num_candidates: numCandidates });
+    const result = await generateMut.mutateAsync({ num_candidates: numCandidates });
+    if (result.task_id) {
+      setTaskId(result.task_id);
+    }
   };
 
   const handleReview = (data: ReviewRequest) => {

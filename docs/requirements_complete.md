@@ -1,0 +1,514 @@
+# VideoPipeline 项目需求文档
+
+## 📋 文档信息
+
+| 项目 | 内容 |
+|------|------|
+| 项目名称 | VideoPipeline |
+| 版本 | 1.0.0 |
+| 最后更新 | 2026-04-28 |
+| 文档状态 | 完整版 |
+
+---
+
+## 1. 项目概述
+
+### 1.1 项目背景
+
+VideoPipeline 是一套全本地化、分布式、人在回路的视频生产系统。从题材输入到电视剧品质成片，全流程在自有设备上运行。支持接入免费/付费云端 API 作为补充，本地和云端可自由混合组合。
+
+### 1.2 项目目标
+
+- **全本地化**：所有推理在自有设备完成，零外部付费依赖
+- **分布式架构**：支持多节点协同工作，提高生产效率
+- **人在回路**：每个阶段必须有人工审核门控，确保质量可控
+- **跨平台支持**：支持 Linux / macOS / Windows
+- **轻量部署**：配置文件 + Web 页面管理，一台机器也能跑
+- **高可用性**：远程供应商故障时本地供应商自动接管，流水线不停工
+
+---
+
+## 2. 核心功能需求
+
+### 2.1 全本地化，零外部付费
+
+**需求描述**：
+- 所有推理在自有设备完成
+- 支持接入免费云端 API（GLM、Gemini、硅基流动免费模型等）
+- 支持主流云端供应商（OpenAI、Kimi、DeepSeek、通义千问等）
+- 本地和云端可自由混合组合
+
+**验收标准**：
+- ✅ 系统可在完全离线环境下运行（除首次安装依赖）
+- ✅ 支持至少 5 种免费云端 API
+- ✅ 支持至少 10 种付费云端 API
+- ✅ 本地和云端供应商可无缝切换
+
+### 2.2 分布式架构
+
+**需求描述**：
+- 每台机器专职跑一类服务，对外暴露标准 API
+- 编排层统一调度各节点
+- 供应商系统包裹本地节点，统一抽象层
+
+**验收标准**：
+- ✅ 支持至少 3 种节点类型（LLM、IMAGE、VIDEO）
+- ✅ 支持动态添加/删除节点
+- ✅ 支持节点健康检查和自动故障转移
+- ✅ 支持节点负载均衡
+
+### 2.3 人在回路，质量可控
+
+**需求描述**：
+- 每个阶段必须有人工审核门控
+- 人可以修改、重做、回退任何阶段
+- 每个素材生成多张候选，人从中选最好的
+- 提示词可直接编辑
+- 版本历史完整保留
+
+**验收标准**：
+- ✅ 每个阶段都有审核界面
+- ✅ 支持修改、重做、回退操作
+- ✅ 每个阶段至少生成 3 个候选
+- ✅ 支持提示词编辑
+- ✅ 版本历史完整可追溯
+
+### 2.4 跨平台支持
+
+**需求描述**：
+- 支持 Linux / macOS / Windows
+- 不使用 Docker
+- Python 虚拟环境 + 系统包管理
+
+**验收标准**：
+- ✅ 在 Linux 上正常运行
+- ✅ 在 macOS 上正常运行
+- ✅ 在 Windows 上正常运行
+- ✅ 不依赖 Docker
+
+### 2.5 个人使用，轻量部署
+
+**需求描述**：
+- 配置文件 + Web 页面管理
+- 一台机器也能跑，多台更好
+
+**验收标准**：
+- ✅ 支持配置文件管理
+- ✅ 支持 Web 页面管理
+- ✅ 单机可正常运行
+- ✅ 多机可协同工作
+
+### 2.6 页面化管理
+
+**需求描述**：
+- 所有节点管理通过 Web 页面完成
+- 配置变更即时生效
+
+**验收标准**：
+- ✅ 支持节点添加/删除/编辑
+- ✅ 支持节点状态监控
+- ✅ 支持配置变更即时生效
+
+### 2.7 本地永不中断
+
+**需求描述**：
+- 远程供应商故障时本地供应商自动接管
+- 流水线不停工
+
+**验收标准**：
+- ✅ 支持供应商故障检测
+- ✅ 支持自动故障转移
+- ✅ 流水线在故障时继续运行
+
+---
+
+## 3. 流水线需求
+
+### 3.1 九阶段流水线
+
+| 阶段 | 名称 | 使用能力 | 输出 | 预计时间 |
+|---|---|---|---|---|
+| S1 | 世界观与角色 | LLM | JSON | 30-60 秒 |
+| S2 | 剧情大纲 | LLM | JSON | 30-60 秒 |
+| S3 | 逐场景剧本 | LLM | JSON | 60-120 秒 |
+| S4 | 分镜与提示词 | LLM | JSON | 30-60 秒 |
+| S5 | 关键帧图像 | IMAGE | PNG | 60-180 秒 |
+| S6 | 视频片段 | VIDEO | MP4 | 120-300 秒 |
+| S7 | 音频合成 | TTS+BGM+SFX | WAV | 60-120 秒 |
+| S8 | 粗剪合成 | POST(FFmpeg) | MP4 | 60-180 秒 |
+| S9 | 精剪出片 | POST(FFmpeg) | MP4 | 60-180 秒 |
+
+### 3.2 阶段状态
+
+| 状态 | 描述 | 操作 |
+|------|------|------|
+| PENDING | 待处理 | 无 |
+| READY | 准备就绪 | 开始生成 |
+| GENERATING | 生成中 | 等待 |
+| REVIEW | 审核中 | 审核/修改/重做 |
+| APPROVED | 已批准 | 进入下一阶段 |
+| LOCKED | 已锁定 | 不可修改 |
+
+### 3.3 阶段依赖
+
+- S1 → S2 → S3 → S4 → S5 → S6 → S7 → S8 → S9
+- 每个阶段必须在前一阶段 APPROVED 后才能开始
+- 支持跳过某些阶段（可选）
+
+---
+
+## 4. 供应商体系需求
+
+### 4.1 支持的能力
+
+| 能力 | 描述 | 本地供应商 | 云端供应商 |
+|------|------|-----------|-----------|
+| LLM | 大语言模型 | Ollama | OpenAI, Kimi, DeepSeek, 通义千问 |
+| IMAGE | 图像生成 | ComfyUI, SD WebUI | Midjourney, DALL-E |
+| VIDEO | 视频生成 | ComfyUI, SD WebUI | Runway, Pika |
+| TTS | 文字转语音 | Edge-TTS, VITS | Azure TTS, Google TTS |
+| BGM | 背景音乐 | 本地音乐库 | Epidemic Sound |
+| SFX | 音效 | 本地音效库 | Freesound |
+| POST | 后期处理 | FFmpeg | 无 |
+
+### 4.2 供应商调度策略
+
+- **优先级调度**：按配置的优先级顺序尝试供应商
+- **故障降级**：当前供应商失败时自动尝试下一个供应商
+- **负载均衡**：多个相同优先级的供应商之间负载均衡
+- **本地优先**：本地供应商优先于云端供应商
+
+### 4.3 ComfyUI 适配器
+
+- 采用工作流 JSON 模板驱动方式
+- 自动分析工作流结构
+- 通过参数覆盖注入提示词、尺寸、模型等参数
+- 支持前端导入自定义工作流 JSON
+
+### 4.4 SD WebUI 适配器
+
+- 使用原生 API（/sdapi/v1/txt2img、/sdapi/v1/img2img）
+- 支持所有 SD WebUI 参数
+
+---
+
+## 5. 技术架构需求
+
+### 5.1 架构层次
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Web 管理界面                          │
+│              (React + TypeScript + shadcn/ui)            │
+└────────────────────┬──────────────────────────────────────┘
+                     │ HTTP/WebSocket
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    编排中枢                              │
+│              (FastAPI + SQLAlchemy + Celery)              │
+└────────────────────┬──────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  供应商抽象层                            │
+│              (Supplier Registry + Adapters)               │
+└──────┬────────────────────────────────────────────────────┘
+       │
+       ├─────────────────────────────────────────────┐
+       │                                         │
+       ▼                                         ▼
+┌──────────────────────┐              ┌──────────────────────┐
+│   本地节点          │              │   云端供应商        │
+│  (ComfyUI, SD WebUI)│              │  (OpenAI, Kimi...)  │
+└──────────────────────┘              └──────────────────────┘
+```
+
+### 5.2 技术栈
+
+**后端**：
+- Python 3.11+
+- FastAPI 0.115.0
+- SQLAlchemy 2.0.35 (async)
+- PostgreSQL + asyncpg
+- Celery 5.4.0 + Redis 5.2.0
+- Pydantic 2.9.0
+
+**前端**：
+- React 18+
+- TypeScript strict 模式
+- Vite 5.0+
+- shadcn/ui
+- Tailwind CSS
+- TanStack Query
+
+**其他**：
+- WebSocket (实时通信)
+- FFmpeg (视频处理)
+- Redis (任务队列和缓存)
+
+### 5.3 数据模型
+
+| 表名 | 描述 | 主要字段 |
+|------|------|---------|
+| projects | 项目 | id, name, description, genre, target_episodes, target_duration_minutes |
+| stages | 阶段 | id, project_id, stage_type, status, current_candidate_id |
+| candidates | 候选 | id, stage_id, content, metadata |
+| artifacts | 产物 | id, candidate_id, artifact_type, file_path, metadata |
+| versions | 版本 | id, candidate_id, version_number, content, created_at |
+| nodes | 节点 | id, name, node_type, base_url, capabilities, status |
+| capability_configs | 能力配置 | id, capability, suppliers, retry_count, timeout_seconds |
+
+### 5.4 API 端点
+
+**项目管理**：
+- `GET /api/projects` - 获取项目列表
+- `POST /api/projects` - 创建项目
+- `GET /api/projects/{id}` - 获取项目详情
+- `PUT /api/projects/{id}` - 更新项目
+- `DELETE /api/projects/{id}` - 删除项目
+
+**阶段管理**：
+- `GET /api/projects/{id}/stages` - 获取阶段列表
+- `GET /api/projects/{id}/stages/{stage_type}` - 获取阶段详情
+- `POST /api/projects/{id}/stages/{stage_type}/generate` - 生成候选
+- `PUT /api/projects/{id}/stages/{stage_type}/approve` - 批准阶段
+- `PUT /api/projects/{id}/stages/{stage_type}/reject` - 拒绝阶段
+
+**候选管理**：
+- `GET /api/projects/{id}/stages/{stage_type}/candidates` - 获取候选列表
+- `GET /api/projects/{id}/stages/{stage_type}/candidates/{candidate_id}` - 获取候选详情
+- `PUT /api/projects/{id}/stages/{stage_type}/candidates/{candidate_id}/select` - 选择候选
+
+**节点管理**：
+- `GET /api/nodes` - 获取节点列表
+- `POST /api/nodes` - 添加节点
+- `PUT /api/nodes/{id}` - 更新节点
+- `DELETE /api/nodes/{id}` - 删除节点
+- `POST /api/nodes/{id}/test` - 测试节点连接
+
+**供应商管理**：
+- `GET /api/suppliers/capabilities` - 获取能力配置
+- `PUT /api/suppliers/capabilities` - 更新能力配置
+- `POST /api/suppliers/test` - 测试供应商
+
+**连续性管理**：
+- `GET /api/projects/{id}/characters` - 获取角色状态列表
+- `POST /api/projects/{id}/characters` - 创建角色状态
+- `PUT /api/projects/{id}/characters/{character_id}` - 更新角色状态
+- `DELETE /api/projects/{id}/characters/{character_id}` - 删除角色状态
+- `GET /api/projects/{id}/scenes` - 获取场景资产列表
+- `POST /api/projects/{id}/scenes` - 创建场景资产
+- `PUT /api/projects/{id}/scenes/{scene_id}` - 更新场景资产
+- `DELETE /api/projects/{id}/scenes/{scene_id}` - 删除场景资产
+
+**节奏管理**：
+- `GET /api/projects/{id}/pacing/templates` - 获取节奏模板列表
+- `POST /api/projects/{id}/pacing/templates` - 创建节奏模板
+- `PUT /api/projects/{id}/pacing/templates/{template_id}` - 更新节奏模板
+- `DELETE /api/projects/{id}/pacing/templates/{template_id}` - 删除节奏模板
+- `POST /api/projects/{id}/pacing/validate` - 验证节奏
+
+**合规检查**：
+- `GET /api/projects/{id}/compliance/reports` - 获取合规报告列表
+- `POST /api/projects/{id}/compliance/check/face` - 检查人脸识别
+- `POST /api/projects/{id}/compliance/check/music` - 检查音乐版权
+- `POST /api/projects/{id}/compliance/check/content` - 检查内容审核
+
+---
+
+## 6. 非功能需求
+
+### 6.1 性能需求
+
+| 指标 | 目标 | 备注 |
+|------|------|------|
+| 候选生成时间 | <30 秒/个 | 使用 Celery 异步处理 |
+| 合规检查时间 | <40 秒/次 | 使用 Celery 异步处理 |
+| 连续性检查时间 | <20 秒/次 | 使用 Celery 异步处理 |
+| 页面响应时间 | <2 秒 | 正常网络条件下 |
+| 并发用户数 | ≥10 | 单机部署 |
+| 任务超时率 | <5% | 使用 Celery + Redis |
+
+### 6.2 可用性需求
+
+| 指标 | 目标 | 备注 |
+|------|------|------|
+| 系统可用性 | ≥99% | 单机部署 |
+| 故障恢复时间 | <5 分钟 | 自动故障转移 |
+| 数据持久化 | 100% | PostgreSQL + Redis |
+
+### 6.3 安全性需求
+
+- 所有 API 端点需要身份验证（可选）
+- 敏感数据加密存储
+- 防止 SQL 注入
+- 防止 XSS 攻击
+- 防止 CSRF 攻击
+
+### 6.4 可维护性需求
+
+- 代码覆盖率 ≥80%
+- 零类型告警
+- 零占位代码
+- 接口前后端完全一致
+- 完整的文档
+
+### 6.5 可扩展性需求
+
+- 支持动态添加供应商
+- 支持动态添加节点
+- 支持自定义工作流
+- 支持插件化扩展
+
+---
+
+## 7. 部署需求
+
+### 7.1 系统要求
+
+**最低配置**：
+- CPU: 4 核
+- 内存: 8GB
+- 存储: 100GB SSD
+- 操作系统: Linux / macOS / Windows
+
+**推荐配置**：
+- CPU: 8 核
+- 内存: 16GB
+- 存储: 500GB SSD
+- 操作系统: Linux / macOS / Windows
+- GPU: NVIDIA RTX 3060 或更高（用于本地图像/视频生成）
+
+### 7.2 依赖软件
+
+- Python 3.11+
+- PostgreSQL 14+
+- Redis 6+
+- FFmpeg 4+
+- Node.js 18+
+
+### 7.3 部署方式
+
+- 不使用 Docker
+- Python 虚拟环境
+- 系统包管理器
+- 配置文件管理
+
+---
+
+## 8. 测试需求
+
+### 8.1 单元测试
+
+- 代码覆盖率 ≥80%
+- 所有核心功能都有单元测试
+- 使用 pytest
+
+### 8.2 集成测试
+
+- 测试所有 API 端点
+- 测试供应商集成
+- 测试数据库操作
+
+### 8.3 性能测试
+
+- 测试并发性能
+- 测试响应时间
+- 测试吞吐量
+
+### 8.4 用户验收测试
+
+- 测试完整流水线
+- 测试人在回路功能
+- 测试故障转移
+
+---
+
+## 9. 文档需求
+
+### 9.1 用户文档
+
+- 快速开始指南
+- 用户使用手册
+- 常见问题解答
+
+### 9.2 开发文档
+
+- 架构设计文档
+- API 文档
+- 数据库设计文档
+- 开发者指南
+
+### 9.3 运维文档
+
+- 部署指南
+- 配置指南
+- 监控指南
+- 故障排除指南
+
+---
+
+## 10. 项目里程碑
+
+| 阶段 | 任务 | 完成时间 |
+|------|------|---------|
+| M1 | 核心架构搭建 | 2026-04-15 |
+| M2 | 九阶段流水线实现 | 2026-04-22 |
+| M3 | 供应商体系实现 | 2026-04-25 |
+| M4 | 连续性管理实现 | 2026-04-27 |
+| M5 | Celery + Redis 异步处理 | 2026-04-28 |
+| M6 | 前端集成完成 | 2026-04-28 |
+| M7 | 测试和优化 | 2026-04-30 |
+| M8 | 文档完善 | 2026-04-30 |
+
+---
+
+## 11. 风险和挑战
+
+### 11.1 技术风险
+
+- 本地供应商性能可能不如云端供应商
+- 多节点协同可能存在网络延迟
+- 异步任务处理可能增加复杂度
+
+### 11.2 业务风险
+
+- 用户可能不习惯人在回路的工作方式
+- 需要大量的人工审核时间
+- 可能需要更多的硬件资源
+
+### 11.3 缓解措施
+
+- 优化本地供应商性能
+- 使用 Celery + Redis 提高并发性能
+- 提供详细的用户文档和培训
+
+---
+
+## 12. 附录
+
+### 12.1 术语表
+
+| 术语 | 定义 |
+|------|------|
+| LLM | 大语言模型 |
+| IMAGE | 图像生成能力 |
+| VIDEO | 视频生成能力 |
+| TTS | 文字转语音 |
+| BGM | 背景音乐 |
+| SFX | 音效 |
+| POST | 后期处理 |
+| Celery | Python 异步任务队列 |
+| Redis | 内存数据库 |
+| WebSocket | 实时通信协议 |
+
+### 12.2 参考资料
+
+- [FastAPI 官方文档](https://fastapi.tiangolo.com/)
+- [Celery 官方文档](https://docs.celeryproject.org/)
+- [React 官方文档](https://react.dev/)
+- [shadcn/ui 官方文档](https://ui.shadcn.com/)
+
+---
+
+**文档结束**

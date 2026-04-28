@@ -28,6 +28,7 @@ from app.services import pipeline_service, review_service, version_service
 from app.suppliers.registry import SupplierRegistry
 from app.config import settings
 from app.ws.hub import ws_hub
+from app.tasks.pipeline_tasks import generate_candidates as generate_candidates_task
 from datetime import datetime, timezone
 
 router = APIRouter()
@@ -144,14 +145,14 @@ async def update_config(
     return APIResponse(data=_stage_to_response(stage))
 
 
-@router.post("/projects/{project_id}/stages/{stage_type}/generate", response_model=APIResponse[list[CandidateResponse]])
+@router.post("/projects/{project_id}/stages/{stage_type}/generate")
 async def generate_candidates(
     project_id: UUID,
     stage_type: str,
     data: StageGenerateRequest,
     db: AsyncSession = Depends(get_db),
-) -> APIResponse[list[CandidateResponse]]:
-    print(f"DEBUG: generate_candidates called with project_id={project_id}, stage_type={stage_type}, data={data}")
+):
+    """异步生成候选内容"""
     # 获取项目和阶段
     proj_result = await db.execute(select(Project).where(Project.id == project_id))
     project = proj_result.scalar_one()
@@ -160,19 +161,56 @@ async def generate_candidates(
     )
     stage = stage_result.scalar_one()
 
-    # 获取 registry（通过 app state）
-    from app.main import app
-    registry: SupplierRegistry = app.state.supplier_registry
+    # 更新阶段状态为处理中
+    stage.status = "processing"
+    await db.flush()
 
-    candidates = await pipeline_service.generate_candidates(
-        db=db, project=project, stage=stage,
-        prompt=data.prompt, config=data.config,
-        num_candidates=data.num_candidates, registry=registry,
+    # 提交异步任务
+    task = generate_candidates_task.delay(
+        project_id=str(project_id),
+        stage_type=stage_type,
+        num_candidates=data.num_candidates,
+        prompt=data.prompt or stage.prompt,
+        config=data.config or stage.config,
     )
 
-    return APIResponse(data=[
-        _candidate_to_response(c, stage_type) for c in candidates
-    ])
+    return APIResponse(data={
+        "task_id": task.id,
+        "status": "pending",
+        "message": "生成任务已提交",
+    })
+
+
+@router.get("/projects/{project_id}/stages/{stage_type}/tasks/{task_id}")
+async def get_generation_task_status(
+    project_id: UUID,
+    stage_type: str,
+    task_id: str,
+) -> APIResponse[dict[str, Any]]:
+    """获取生成任务状态"""
+    from app.celery_app import celery_app
+    
+    result = celery_app.AsyncResult(task_id)
+    
+    if result.ready():
+        if result.successful():
+            return APIResponse(data={
+                "task_id": task_id,
+                "status": "success",
+                "result": result.result,
+            })
+        else:
+            return APIResponse(data={
+                "task_id": task_id,
+                "status": "error",
+                "error": str(result.result),
+            })
+    else:
+        return APIResponse(data={
+            "task_id": task_id,
+            "status": "pending",
+            "message": "任务正在执行中",
+        })
 
 
 @router.get("/projects/{project_id}/stages/{stage_type}/candidates", response_model=APIResponse[list[CandidateResponse]])

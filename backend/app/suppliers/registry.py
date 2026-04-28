@@ -4,6 +4,7 @@ Supplier registry: manages all supplier instances by capability with priority sc
 
 import asyncio
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,8 @@ from app.schemas.supplier import (
 )
 from app.suppliers.base import BaseSupplier
 from app.exceptions import AllSuppliersExhausted
+
+logger = logging.getLogger(__name__)
 
 
 def _load_workflow_from_file(path: str) -> dict[str, Any] | None:
@@ -35,7 +38,7 @@ def _load_workflow_from_file(path: str) -> dict[str, Any] | None:
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception as e:
-        print(f"Failed to load workflow from {path}: {e}")
+        logger.error(f"Failed to load workflow from {path}: {e}")
     return None
 
 

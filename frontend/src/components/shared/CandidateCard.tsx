@@ -19,14 +19,6 @@ export function CandidateCard({ candidate, stageType, projectId, isSelected, onS
   const contentPreview = JSON.stringify(candidate.content, null, 2).slice(0, 200);
 
   const handleClick = () => {
-    console.log('CandidateCard clicked:', {
-      candidateId: candidate.id,
-      artifacts: candidate.artifacts,
-      artifactsCount: candidate.artifacts?.length || 0,
-      stageType,
-      projectId
-    });
-    
     // 点击卡片主体时调用onSelect进行选中（用于审核）
     onSelect();
   };
@@ -34,7 +26,6 @@ export function CandidateCard({ candidate, stageType, projectId, isSelected, onS
   const handleViewDetail = (e: React.MouseEvent) => {
     e.stopPropagation();
     const targetPath = `/projects/${projectId}/stages/${stageType}/candidates/${candidate.id}`;
-    console.log('Navigating to:', targetPath);
     navigate(targetPath);
   };
 

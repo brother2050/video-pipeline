@@ -63,7 +63,6 @@ async def call_llm_for_json(
         except Exception as e:
             # 如果是 token 限制错误，尝试更小的值
             if "400" in str(e) or "Bad Request" in str(e):
-                print(f"[DEBUG] Token limit error, retrying with smaller limit: {e}")
                 raw_response = await supplier.chat(
                     messages=enriched_messages, 
                     model="",
@@ -73,12 +72,7 @@ async def call_llm_for_json(
             else:
                 raise
 
-        # 调试信息：打印 LLM 原始响应
-        print(f"[DEBUG] LLM Response (attempt {attempt + 1}): {raw_response[:500]}...")
-        print(f"[DEBUG] Full response length: {len(raw_response)} characters")
-
         json_str = extract_json_from_response(raw_response)
-        print(f"[DEBUG] Extracted JSON: {json_str[:500]}...")
 
         try:
             content = json.loads(json_str)

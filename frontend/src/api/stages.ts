@@ -33,9 +33,14 @@ export const stageApi = {
     return resp.data as StageResponse;
   },
 
-  generate: async (projectId: string, stageType: string, data: StageGenerateRequest): Promise<CandidateResponse[]> => {
+  generate: async (projectId: string, stageType: string, data: StageGenerateRequest): Promise<{ task_id: string; status: string; message: string }> => {
     const resp = await client.post(`/projects/${projectId}/stages/${stageType}/generate`, data);
-    return resp.data as CandidateResponse[];
+    return resp.data as { task_id: string; status: string; message: string };
+  },
+
+  getTaskStatus: async (projectId: string, stageType: string, taskId: string): Promise<any> => {
+    const resp = await client.get(`/projects/${projectId}/stages/${stageType}/tasks/${taskId}`);
+    return resp.data;
   },
 
   listCandidates: async (projectId: string, stageType: string): Promise<CandidateResponse[]> => {

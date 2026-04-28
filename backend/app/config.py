@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # --- WebSocket ---
     ws_heartbeat_interval: int = 15
 
+    # --- Celery ---
+    celery_broker_url: str = "redis://localhost:6379/0"
+    celery_result_backend: str = "redis://localhost:6379/1"
+
     # --- ComfyUI ---
     comfyui_default_workflow_path: str = "config/comfyui_default_workflow.json"
 

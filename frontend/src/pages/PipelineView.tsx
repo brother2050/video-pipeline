@@ -33,31 +33,19 @@ export default function PipelineView() {
   const [stageProgress, setStageProgress] = useState<Record<string, StageProgressData>>({});
 
   useEffect(() => {
-    console.log('PipelineView: WebSocket connected:', connected);
     if (id) {
-      console.log('PipelineView: Subscribing to project:', id);
       subscribe(id);
     }
     return () => { 
       if (id) {
-        console.log('PipelineView: Unsubscribing from project:', id);
         unsubscribe(id);
       }
     };
   }, [id, subscribe, unsubscribe]);
 
   useEffect(() => {
-    console.log('PipelineView: WebSocket message received:', lastMessage);
     if (lastMessage?.type === "stage_progress") {
       const data = lastMessage.data as Record<string, unknown>;
-      console.log('PipelineView: Stage progress data:', data);
-      console.log('PipelineView: Current project id:', id);
-      console.log('PipelineView: Project id match:', data.project_id === id);
-      console.log('PipelineView: Stage type:', data.stage_type);
-      console.log('PipelineView: Progress current:', data.progress_current);
-      console.log('PipelineView: Progress total:', data.progress_total);
-      console.log('PipelineView: Status:', data.status);
-      
       if (data.project_id === id && data.stage_type && data.progress_current !== undefined && data.progress_total !== undefined) {
         const progressData: StageProgressData = {
           project_id: String(data.project_id),
@@ -66,19 +54,14 @@ export default function PipelineView() {
           progress_total: Number(data.progress_total),
           status: String(data.status || "generating")
         };
-        console.log('PipelineView: Setting progress for stage:', progressData.stage_type, progressData);
         setStageProgress(prev => ({
           ...prev,
           [progressData.stage_type]: progressData
         }));
-      } else {
-        console.log('PipelineView: Stage progress data validation failed');
       }
     } else if (lastMessage?.type === "stage_status") {
       const data = lastMessage.data as Record<string, unknown>;
-      console.log('PipelineView: Stage status update:', data);
       if (data.project_id === id && data.stage_type && data.status) {
-        console.log('PipelineView: Stage status updated:', data.stage_type, data.status);
         // 重新获取阶段数据以更新状态
         queryClient.invalidateQueries({ queryKey: ["stages", id] });
         queryClient.invalidateQueries({ queryKey: ["stage", id, data.stage_type] });
@@ -92,9 +75,6 @@ export default function PipelineView() {
 
   const stageMap = new Map(stages.map((s) => [s.stage_type, s]));
   const summaryMap = new Map((project.stages_summary || []).map((s) => [s.stage_type, s]));
-  console.log('PipelineView: Rendering stages, stageMap size:', stageMap.size);
-  console.log('PipelineView: Stage progress state:', stageProgress);
-  console.log('PipelineView: Summary map:', summaryMap);
 
   const getStatusIcon = (status: StageStatus) => {
     switch (status) {
@@ -129,8 +109,6 @@ export default function PipelineView() {
             const stage = stageMap.get(stageType);
             const status = stage?.status ?? StageStatus.PENDING;
             const isClickable = status !== StageStatus.PENDING;
-            console.log(`PipelineView: Rendering stage ${stageType}, status: ${status}, isClickable: ${isClickable}`);
-            console.log(`PipelineView: Stage progress for ${stageType}:`, stageProgress[stageType]);
 
             return (
               <div key={stageType} className="flex flex-col items-center">

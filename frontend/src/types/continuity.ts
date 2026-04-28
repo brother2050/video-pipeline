@@ -151,6 +151,12 @@ export interface ComplianceCheckRequest {
   stage_type?: string;
 }
 
+export interface AsyncTaskResponse {
+  task_id: string;
+  status: string;
+  message: string;
+}
+
 export interface ConsistencyCheck {
   id: string;
   project_id: string;

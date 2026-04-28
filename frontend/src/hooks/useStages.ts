@@ -38,11 +38,23 @@ export function useGenerate(projectId: string, stageType: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: StageGenerateRequest) => stageApi.generate(projectId, stageType, data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["candidates", projectId, stageType] });
       qc.invalidateQueries({ queryKey: ["stage", projectId, stageType] });
       qc.invalidateQueries({ queryKey: ["stages", projectId] });
+      
+      if (result.task_id) {
+        setTimeout(() => {
+          qc.invalidateQueries({ queryKey: ["candidates", projectId, stageType] });
+        }, 3000);
+      }
     },
+  });
+}
+
+export function useTaskStatus(projectId: string, stageType: string) {
+  return useMutation({
+    mutationFn: (taskId: string) => stageApi.getTaskStatus(projectId, stageType, taskId),
   });
 }
 

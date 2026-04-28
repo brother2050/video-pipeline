@@ -93,20 +93,6 @@ class ConsistencyCheckResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class ComplianceReportResponse(BaseModel):
-    id: UUID
-    project_id: UUID
-    check_type: str
-    episode_number: int | None
-    stage_type: str | None
-    status: str
-    violations: int
-    violations_detail: dict[str, Any]
-    checked_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
 class PacingTemplateCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)

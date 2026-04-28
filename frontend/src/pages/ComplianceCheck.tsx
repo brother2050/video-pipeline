@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useComplianceReports, useCheckCompliance } from "@/hooks/useContinuity";
 import { projectApi } from "@/api";
-import type { ComplianceCheckRequest } from "@/types/continuity";
+import type { ComplianceCheckRequest, AsyncTaskResponse } from "@/types/continuity";
 
 export function ComplianceCheck() {
   const { id: projectId } = useParams<{ id: string }>();
@@ -40,10 +40,16 @@ export function ComplianceCheck() {
     e.preventDefault();
     try {
       const result = await checkMutation.mutateAsync(formData);
-      toast({ title: "成功", description: "合规检查已启动" });
+      toast({ 
+        title: "成功", 
+        description: `合规检查任务已提交，任务ID: ${result.task_id}` 
+      });
       setDialogOpen(false);
       resetForm();
-      refetch();
+      
+      setTimeout(() => {
+        refetch();
+      }, 2000);
     } catch (error) {
       toast({ 
         title: "错误", 

@@ -20,15 +20,7 @@ export default function CandidateDetailView() {
   const { data: candidate, isLoading } = useCandidateDetail(projectId || "", stageType || "", candidateId || "");
   const { data: stages } = useStages(projectId || "");
 
-  console.log('CandidateDetailView rendered:', {
-    projectId,
-    stageType,
-    candidateId,
-    candidate,
-    isLoading
-  });
-
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -177,18 +169,9 @@ export default function CandidateDetailView() {
               const isClickable = stageData?.status !== StageStatus.PENDING;
               
               const handleStageClick = () => {
-                console.log('Stage clicked:', {
-                  stage,
-                  isClickable,
-                  projectId,
-                  stageData,
-                  currentCandidateId: stageData?.current_candidate_id
-                });
-                
                 if (!isClickable || !projectId) return;
                 
                 // 跳转到阶段审核页面
-                console.log('Navigating to stage review:', `/projects/${projectId}/stages/${stage}`);
                 navigate(`/projects/${projectId}/stages/${stage}`);
               };
               

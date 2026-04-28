@@ -117,9 +117,14 @@ export const continuityApi = {
       return resp.data as ComplianceReport;
     },
 
-    check: async (request: ComplianceCheckRequest): Promise<ComplianceReport> => {
+    check: async (request: ComplianceCheckRequest): Promise<AsyncTaskResponse> => {
       const resp = await client.post("/api/compliance/check", request);
-      return resp.data as ComplianceReport;
+      return resp.data as AsyncTaskResponse;
+    },
+
+    getTaskStatus: async (taskId: string): Promise<any> => {
+      const resp = await client.get(`/api/compliance/tasks/${taskId}`);
+      return resp.data;
     },
   },
 

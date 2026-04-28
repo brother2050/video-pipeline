@@ -1,19 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { continuityApi } from "@/api";
 import type {
-  CharacterState,
   CharacterStateCreate,
   CharacterStateUpdate,
-  SceneAsset,
   SceneAssetCreate,
   SceneAssetUpdate,
-  PacingTemplate,
   PacingTemplateCreate,
   PacingValidationRequest,
-  PacingValidationResult,
-  ComplianceReport,
   ComplianceCheckRequest,
-  ConsistencyCheck,
   ConsistencyCheckRequest,
 } from "@/types/continuity";
 

@@ -25,7 +25,6 @@ export default function PipelineView() {
   const subscribe = useWebSocketStore((s) => s.subscribe);
   const unsubscribe = useWebSocketStore((s) => s.unsubscribe);
   const lastMessage = useWebSocketStore((s) => s.lastMessage);
-  const connected = useWebSocketStore((s) => s.connected);
 
   const { data: project } = useProject(id || "");
   const { data: stages } = useStages(id || "");

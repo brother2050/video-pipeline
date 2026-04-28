@@ -1,5 +1,3 @@
-import type { PaginatedData } from "./api";
-
 export interface CharacterState {
   id: string;
   project_id: string;

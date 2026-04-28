@@ -1,5 +1,6 @@
 """
 阶段4：分镜与提示词
+集成场景资产管理功能。
 """
 
 import json
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.project import Project
 from app.models.stage import Stage
 from app.models.candidate import Candidate
+from app.models.continuity import SceneAsset
 from app.schemas.enums import StageType
 from app.pipeline.stages.base import BaseStage
 from app.pipeline.json_schemas import STORYBOARD_SCHEMA
@@ -43,6 +45,55 @@ class StoryboardStage(BaseStage):
             return True, None
         except JsonSchemaError as e:
             return False, f"JSON Schema 校验失败: {e.message}"
+
+    async def extract_and_save_scene_assets(
+        self,
+        db: AsyncSession,
+        project: Project,
+        content: dict[str, Any],
+        candidate_id: str,
+    ) -> None:
+        """
+        从生成的内容中提取场景信息并保存到SceneAsset表中
+        
+        Args:
+            db: 数据库会话
+            project: 项目对象
+            content: 生成的分镜内容
+            candidate_id: 候选ID
+        """
+        scenes = content.get("scenes", [])
+        for scene in scenes:
+            scene_name = scene.get("name", "")
+            if not scene_name:
+                continue
+            
+            # 检查是否已存在该场景的资产记录
+            from sqlalchemy import select
+            existing = await db.execute(
+                select(SceneAsset).where(
+                    SceneAsset.project_id == project.id,
+                    SceneAsset.scene_name == scene_name,
+                )
+            )
+            existing_asset = existing.scalar_one_or_none()
+            
+            if existing_asset:
+                # 更新现有记录
+                existing_asset.description = scene.get("description", "")
+                existing_asset.layout_description = scene.get("layout", "")
+                existing_asset.notes = f"从候选 {candidate_id} 更新"
+            else:
+                # 创建新的场景资产记录
+                scene_asset = SceneAsset(
+                    project_id=project.id,
+                    scene_name=scene_name,
+                    scene_type=scene.get("type", "interior"),
+                    description=scene.get("description", ""),
+                    layout_description=scene.get("layout", ""),
+                    notes=f"从候选 {candidate_id} 创建",
+                )
+                db.add(scene_asset)
 
     async def generate(
         self,

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Clock, PlayCircle, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Edit, Trash2, Clock, PlayCircle, CheckCircle, XCircle, AlertCircle, Info, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,9 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { usePacingTemplates, useCreatePacingTemplate, useUpdatePacingTemplate, useDeletePacingTemplate, useValidatePacing } from "@/hooks/useContinuity";
+import { projectApi } from "@/api";
 import type { PacingTemplate, PacingTemplateCreate, PacingValidationRequest } from "@/types/continuity";
 
 export function PacingTemplates() {
+  const { id: projectId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PacingTemplate | null>(null);
@@ -36,6 +40,11 @@ export function PacingTemplates() {
   });
 
   const { data: templates, isLoading, refetch } = usePacingTemplates();
+  const { data: project } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => projectApi.get(projectId!),
+    enabled: !!projectId,
+  });
   const createMutation = useCreatePacingTemplate();
   const updateMutation = useUpdatePacingTemplate();
   const deleteMutation = useDeletePacingTemplate();
@@ -145,14 +154,30 @@ export function PacingTemplates() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-blue-900">
+              <strong>已集成到流水线：</strong>节奏模板在"剧情大纲"阶段审核通过后自动提取并保存。
+              您可以在这里查看和编辑节奏模板，也可以手动添加新的节奏模板记录。
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">节奏模板管理</h1>
           <p className="text-muted-foreground mt-1">
-            管理和验证短剧节奏模板
+            {project?.name || "项目"} - 管理和验证短剧节奏模板
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/projects/${projectId}/pipeline`)}>
+            <ArrowRight className="mr-2 h-4 w-4" />
+            查看流水线
+          </Button>
           <Dialog open={validateDialogOpen} onOpenChange={setValidateDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">

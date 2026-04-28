@@ -161,8 +161,8 @@ async def generate_candidates(
     )
     stage = stage_result.scalar_one()
 
-    # 更新阶段状态为处理中
-    stage.status = "processing"
+    # 更新阶段状态为生成中
+    stage.status = "generating"
     await db.flush()
 
     # 提交异步任务

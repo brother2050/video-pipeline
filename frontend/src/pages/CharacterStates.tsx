@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, User, Image as ImageIcon } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Edit, Trash2, User, Image as ImageIcon, Info, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,6 +16,7 @@ import type { CharacterState, CharacterStateCreate, CharacterStateUpdate } from 
 
 export function CharacterStates() {
   const { id: projectId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingState, setEditingState] = useState<CharacterState | null>(null);
@@ -134,6 +135,18 @@ export function CharacterStates() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-blue-900">
+              <strong>已集成到流水线：</strong>角色状态在"世界观与角色"阶段审核通过后自动提取并保存。
+              您可以在这里查看和编辑角色状态，也可以手动添加新的角色状态记录。
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">角色状态管理</h1>
@@ -141,14 +154,19 @@ export function CharacterStates() {
             {project?.name || "项目"} - 管理角色在不同剧集中的外观和状态
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingState(null)}>
-              <Plus className="mr-2 h-4 w-4" />
-              添加角色状态
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/projects/${projectId}/pipeline`)}>
+            <ArrowRight className="mr-2 h-4 w-4" />
+            查看流水线
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingState(null)}>
+                <Plus className="mr-2 h-4 w-4" />
+                添加角色状态
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingState ? "编辑角色状态" : "添加角色状态"}</DialogTitle>
               <DialogDescription>
@@ -254,8 +272,9 @@ export function CharacterStates() {
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {!characterStates || characterStates.length === 0 ? (
@@ -335,7 +354,7 @@ export function CharacterStates() {
                 )}
                 {state.signature_items && Object.keys(state.signature_items).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {Object.entries(state.signature_items).map(([key, value]) => (
+                    {Object.entries(state.signature_items).map(([key, _]) => (
                       <Badge key={key} variant="secondary" className="text-xs">
                         {key}
                       </Badge>

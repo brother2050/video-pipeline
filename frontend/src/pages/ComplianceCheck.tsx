@@ -1,22 +1,22 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Shield, AlertTriangle, CheckCircle, XCircle, FileText, Calendar } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Shield, AlertTriangle, CheckCircle, XCircle, FileText, Calendar, Info, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useComplianceReports, useCheckCompliance } from "@/hooks/useContinuity";
 import { projectApi } from "@/api";
-import type { ComplianceCheckRequest, AsyncTaskResponse } from "@/types/continuity";
+import type { ComplianceCheckRequest } from "@/types/continuity";
 
 export function ComplianceCheck() {
   const { id: projectId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
@@ -133,6 +133,18 @@ export function ComplianceCheck() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-blue-900">
+              <strong>已集成到流水线：</strong>合规检查在每个阶段审核通过后自动执行。
+              您可以在这里查看所有合规检查报告，也可以手动启动新的合规检查任务。
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">合规检查</h1>
@@ -140,14 +152,19 @@ export function ComplianceCheck() {
             {project?.name || "项目"} - 检查内容合规性和版权问题
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              启动检查
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/projects/${projectId}/pipeline`)}>
+            <ArrowRight className="mr-2 h-4 w-4" />
+            查看流水线
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                启动检查
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>启动合规检查</DialogTitle>
               <DialogDescription>
@@ -203,8 +220,9 @@ export function ComplianceCheck() {
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {!reports || reports.length === 0 ? (

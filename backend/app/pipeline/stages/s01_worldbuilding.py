@@ -1,6 +1,7 @@
 """
 阶段1：世界观与角色
 使用 LLM 生成 JSON，用 jsonschema 校验。
+集成角色状态管理功能。
 """
 
 import json
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.project import Project
 from app.models.stage import Stage
 from app.models.candidate import Candidate
+from app.models.continuity import CharacterState
 from app.schemas.enums import StageType
 from app.pipeline.stages.base import BaseStage
 from app.pipeline.json_schemas import WORLDBUILDING_SCHEMA
@@ -39,6 +41,61 @@ class WorldbuildingStage(BaseStage):
             return True, None
         except JsonSchemaError as e:
             return False, f"JSON Schema 校验失败: {e.message}"
+
+    async def extract_and_save_character_states(
+        self,
+        db: AsyncSession,
+        project: Project,
+        content: dict[str, Any],
+        candidate_id: str,
+    ) -> None:
+        """
+        从生成的内容中提取角色信息并保存到CharacterState表中
+        
+        Args:
+            db: 数据库会话
+            project: 项目对象
+            content: 生成的世界观内容
+            candidate_id: 候选ID
+        """
+        characters = content.get("characters", [])
+        for char in characters:
+            char_name = char.get("name", "")
+            if not char_name:
+                continue
+            
+            # 检查是否已存在该角色的状态记录
+            from sqlalchemy import select
+            existing = await db.execute(
+                select(CharacterState).where(
+                    CharacterState.project_id == project.id,
+                    CharacterState.character_name == char_name,
+                )
+            )
+            existing_state = existing.scalar_one_or_none()
+            
+            if existing_state:
+                # 更新现有记录
+                existing_state.outfit_description = char.get("appearance", "")
+                existing_state.hairstyle = char.get("hairstyle", "")
+                existing_state.age_appearance = char.get("age", "")
+                existing_state.accessories = char.get("accessories", {})
+                existing_state.notes = f"从候选 {candidate_id} 更新"
+            else:
+                # 创建新的角色状态记录
+                character_state = CharacterState(
+                    project_id=project.id,
+                    character_name=char_name,
+                    episode_start=1,
+                    episode_end=project.target_episodes,
+                    outfit_description=char.get("appearance", ""),
+                    hairstyle=char.get("hairstyle", ""),
+                    age_appearance=char.get("age", ""),
+                    accessories=char.get("accessories", {}),
+                    signature_items=char.get("signature_items", {}),
+                    notes=f"从候选 {candidate_id} 创建",
+                )
+                db.add(character_state)
 
     async def generate(
         self,

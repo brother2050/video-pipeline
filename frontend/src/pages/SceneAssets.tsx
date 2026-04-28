@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Home, Building2, Image as ImageIcon, MapPin } from "lucide-react";
+import { Plus, Edit, Trash2, Home, Building2, Image as ImageIcon, MapPin, Info, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ import type { SceneAsset, SceneAssetCreate, SceneAssetUpdate } from "@/types/con
 
 export function SceneAssets() {
   const { id: projectId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<SceneAsset | null>(null);
@@ -154,6 +155,18 @@ export function SceneAssets() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-blue-900">
+              <strong>已集成到流水线：</strong>场景资产在"分镜与提示词"阶段审核通过后自动提取并保存。
+              您可以在这里查看和编辑场景资产，也可以手动添加新的场景资产记录。
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">场景资产管理</h1>
@@ -161,14 +174,19 @@ export function SceneAssets() {
             {project?.name || "项目"} - 管理可重复使用的场景资产
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingAsset(null)}>
-              <Plus className="mr-2 h-4 w-4" />
-              添加场景资产
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/projects/${projectId}/pipeline`)}>
+            <ArrowRight className="mr-2 h-4 w-4" />
+            查看流水线
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingAsset(null)}>
+                <Plus className="mr-2 h-4 w-4" />
+                添加场景资产
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingAsset ? "编辑场景资产" : "添加场景资产"}</DialogTitle>
               <DialogDescription>
@@ -276,8 +294,9 @@ export function SceneAssets() {
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {!sceneAssets || sceneAssets.length === 0 ? (

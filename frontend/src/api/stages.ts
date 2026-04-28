@@ -10,6 +10,8 @@ import type {
   RollbackRequest,
   RollbackResponse,
   VersionResponse,
+  StageRecoveryRequest,
+  StageRecoveryResponse,
 } from "@/types";
 
 export const stageApi = {
@@ -71,5 +73,11 @@ export const stageApi = {
   listVersions: async (projectId: string, stageType: string): Promise<VersionResponse[]> => {
     const resp = await client.get(`/projects/${projectId}/stages/${stageType}/versions`);
     return resp.data as VersionResponse[];
+  },
+
+  recoverStage: async (projectId: string, stageType: string, data?: StageRecoveryRequest): Promise<StageRecoveryResponse> => {
+    const params = data?.target_status ? `?target_status=${data.target_status}` : "";
+    const resp = await client.post(`/projects/${projectId}/stages/${stageType}/recover${params}`);
+    return resp.data as StageRecoveryResponse;
   },
 };

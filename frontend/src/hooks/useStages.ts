@@ -110,3 +110,16 @@ export function useUpdatePrompt(projectId: string, stageType: string) {
     },
   });
 }
+
+export function useRecoverStage(projectId: string, stageType: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data?: { target_status?: "ready" | "review" }) =>
+      stageApi.recoverStage(projectId, stageType, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["stages", projectId] });
+      qc.invalidateQueries({ queryKey: ["stage", projectId, stageType] });
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+    },
+  });
+}

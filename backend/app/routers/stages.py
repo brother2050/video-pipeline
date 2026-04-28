@@ -342,6 +342,118 @@ async def rollback_stage(
     ))
 
 
+@router.post("/projects/{project_id}/stages/{stage_type}/recover")
+async def recover_stage(
+    project_id: UUID,
+    stage_type: str,
+    target_status: str = "ready",
+    db: AsyncSession = Depends(get_db),
+) -> APIResponse[dict[str, Any]]:
+    """
+    手动恢复阶段状态
+    用于处理因中断导致的异常状态（如一直停留在"生成中"）
+    
+    Args:
+        project_id: 项目ID
+        stage_type: 阶段类型
+        target_status: 目标状态 (ready/review)，默认为ready
+    
+    Returns:
+        恢复结果
+    """
+    from app.utils.state_recovery import StateRecovery
+    from app.schemas.enums import StageStatus
+    from app.logging_config import get_logger
+    
+    logger = get_logger(__name__)
+    
+    # 验证目标状态
+    valid_statuses = [StageStatus.READY.value, StageStatus.REVIEW.value]
+    if target_status not in valid_statuses:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=400,
+            detail=f"无效的目标状态，必须是: {', '.join(valid_statuses)}"
+        )
+    
+    # 获取当前阶段状态
+    stage_result = await db.execute(
+        select(Stage).where(Stage.project_id == project_id, Stage.stage_type == stage_type)
+    )
+    stage = stage_result.scalar_one_or_none()
+    
+    if not stage:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=404,
+            detail="未找到指定的阶段"
+        )
+    
+    current_status = stage.status
+    target_status_enum = StageStatus.REVIEW if target_status == "review" else StageStatus.READY
+    
+    logger.warning(
+        f"手动恢复阶段状态 - 项目: {project_id}, "
+        f"阶段: {stage_type}, 当前状态: {current_status}, 目标状态: {target_status}"
+    )
+    
+    # 执行恢复
+    success = await StateRecovery.recover_stage_by_id(
+        project_id=project_id,
+        stage_type=stage_type,
+        target_status=target_status_enum
+    )
+    
+    if success:
+        # 刷新阶段数据
+        await db.refresh(stage)
+        
+        return APIResponse(data={
+            "success": True,
+            "message": f"阶段状态已从 {current_status} 恢复到 {target_status}",
+            "previous_status": current_status,
+            "new_status": stage.status,
+        })
+    else:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=500,
+            detail="恢复阶段状态失败"
+        )
+
+
+@router.get("/admin/stages/stuck")
+async def get_stuck_stages() -> APIResponse[dict[str, Any]]:
+    """
+    获取所有卡住的阶段（管理员接口）
+    返回处于"生成中"状态超过阈值的阶段
+    """
+    from app.utils.state_recovery import StateRecovery
+    
+    stuck_stages = await StateRecovery.get_stuck_stages()
+    
+    return APIResponse(data={
+        "count": len(stuck_stages),
+        "stages": stuck_stages,
+        "timeout_minutes": StateRecovery.GENERATING_TIMEOUT_MINUTES,
+    })
+
+
+@router.post("/admin/stages/recover-all")
+async def recover_all_stuck_stages() -> APIResponse[dict[str, Any]]:
+    """
+    自动恢复所有卡住的阶段（管理员接口）
+    """
+    from app.utils.state_recovery import StateRecovery
+    
+    stats = await StateRecovery.check_and_recover_stuck_stages()
+    
+    return APIResponse(data={
+        "message": "状态恢复完成",
+        "statistics": stats,
+    })
+
+
 @router.get("/projects/{project_id}/stages/{stage_type}/versions", response_model=APIResponse[list[VersionResponse]])
 async def list_versions(
     project_id: UUID,

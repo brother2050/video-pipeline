@@ -238,6 +238,39 @@ export interface RollbackResponse {
   message: string;
 }
 
+// --- 状态恢复 ---
+export interface StageRecoveryRequest {
+  target_status?: "ready" | "review";
+}
+
+export interface StageRecoveryResponse {
+  success: boolean;
+  message: string;
+  previous_status: string;
+  new_status: string;
+}
+
+export interface StuckStagesResponse {
+  count: number;
+  stages: Array<{
+    project_id: string;
+    stage_type: StageType;
+    current_status: StageStatus;
+    last_updated: string | null;
+    stuck_duration_minutes: number | null;
+  }>;
+  timeout_minutes: number;
+}
+
+export interface RecoveryAllResponse {
+  message: string;
+  statistics: {
+    checked: number;
+    recovered: number;
+    skipped: number;
+  };
+}
+
 // --- 版本 ---
 export interface VersionResponse {
   id: string;

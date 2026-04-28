@@ -10,9 +10,10 @@ import { useParams } from "react-router-dom";
 import { useProject } from "@/hooks/useProjects";
 import {
   useStage, useCandidates, useGenerate,
-  useReview, useRollback, useVersions, useUpdatePrompt, useTaskStatus,
+  useReview, useRollback, useVersions, useUpdatePrompt, useTaskStatus, useRecoverStage,
 } from "@/hooks/useStages";
 import { useWebSocketStore } from "@/stores/websocketStore";
+import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { StageStatusBadge } from "@/components/shared/StageStatusBadge";
 import { ProjectNav } from "@/components/layout/ProjectNav";
 import { STAGE_LABELS } from "@/lib/constants";
-import { Loader2, Play } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Loader2, Play, RefreshCw, AlertTriangle } from "lucide-react";
 import { StageStatus, ReviewAction, StageType } from "@/types";
 import type { ReviewRequest, RollbackRequest } from "@/types";
 
@@ -33,6 +35,7 @@ export default function StageReview() {
   const { id, stageType } = useParams<{ id: string; stageType: string }>();
   const subscribe = useWebSocketStore((s) => s.subscribe);
   const unsubscribe = useWebSocketStore((s) => s.unsubscribe);
+  const { toast } = useToast();
 
   const { data: project } = useProject(id || "");
   const { data: stage, isLoading: stageLoading } = useStage(id || "", stageType || "");
@@ -44,19 +47,56 @@ export default function StageReview() {
   const reviewMut = useReview(id || "", stageType || "");
   const rollbackMut = useRollback(id || "", stageType || "");
   const updatePromptMut = useUpdatePrompt(id || "", stageType || "");
+  const recoverMut = useRecoverStage(id || "", stageType || "");
 
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [numCandidates, setNumCandidates] = useState(3);
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [isStuck, setIsStuck] = useState(false);
 
   const handleSelect = (candidateId: string) => {
     setSelectedCandidateId(candidateId);
+  };
+
+  const handleRecover = async () => {
+    try {
+      const targetStatus = candidates && candidates.length > 0 ? "review" : "ready";
+      await recoverMut.mutateAsync({ target_status: targetStatus });
+      toast({ 
+        title: "恢复成功", 
+        description: `阶段状态已恢复到${targetStatus === "ready" ? "就绪" : "审核"}` 
+      });
+      setIsStuck(false);
+    } catch (error) {
+      toast({ 
+        title: "恢复失败", 
+        description: "恢复阶段状态失败，请稍后重试" 
+      });
+      console.error("Recovery error:", error);
+    }
   };
 
   useEffect(() => {
     if (id) subscribe(id);
     return () => { if (id) unsubscribe(id); };
   }, [id, subscribe, unsubscribe]);
+
+  // 检测卡住状态
+  useEffect(() => {
+    if (!stage) return;
+
+    const STUCK_THRESHOLD_MINUTES = 30;
+    const now = Date.now();
+
+    if (stage.status === StageStatus.GENERATING && stage.updated_at) {
+      const updatedTime = new Date(stage.updated_at).getTime();
+      const stuckDuration = (now - updatedTime) / (1000 * 60);
+      
+      setIsStuck(stuckDuration > STUCK_THRESHOLD_MINUTES);
+    } else {
+      setIsStuck(false);
+    }
+  }, [stage]);
 
   // 自动选中已锁定的候选
   useEffect(() => {
@@ -174,6 +214,31 @@ export default function StageReview() {
                   <><Play className="h-4 w-4 mr-2" />生成</>
                 )}
               </Button>
+
+              {/* 恢复按钮 - 仅在卡住时显示 */}
+              {isStuck && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <div className="flex items-start gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-800">阶段已卡住</p>
+                      <p className="text-xs text-red-600 mt-1">
+                        该阶段处于"生成中"状态超过30分钟，可能已中断。
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-red-700 border-red-300 hover:bg-red-100"
+                    onClick={handleRecover}
+                    disabled={recoverMut.isPending}
+                  >
+                    <RefreshCw className={cn("h-3 w-3 mr-2", recoverMut.isPending && "animate-spin")} />
+                    恢复状态
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

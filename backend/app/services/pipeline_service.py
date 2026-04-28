@@ -109,6 +109,9 @@ async def generate_candidates(
         },
     )
 
+    # 提交所有数据库更改
+    await db.commit()
+
     return candidates
 
 

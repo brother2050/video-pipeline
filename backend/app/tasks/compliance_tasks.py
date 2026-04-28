@@ -12,7 +12,7 @@ from app.database import async_session_factory
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(bind=True, name="app.tasks.compliance_tasks.check_face_recognition")
+@celery_app.task(bind=True, name="app.tasks.compliance_tasks.check_face_recognition", queue="compliance")
 def check_face_recognition(
     self,
     project_id: str,
@@ -55,7 +55,7 @@ def check_face_recognition(
     return asyncio.run(_run())
 
 
-@celery_app.task(bind=True, name="app.tasks.compliance_tasks.check_music_copyright")
+@celery_app.task(bind=True, name="app.tasks.compliance_tasks.check_music_copyright", queue="compliance")
 def check_music_copyright(
     self,
     project_id: str,
@@ -98,7 +98,7 @@ def check_music_copyright(
     return asyncio.run(_run())
 
 
-@celery_app.task(bind=True, name="app.tasks.compliance_tasks.check_content_moderation")
+@celery_app.task(bind=True, name="app.tasks.compliance_tasks.check_content_moderation", queue="compliance")
 def check_content_moderation(
     self,
     project_id: str,

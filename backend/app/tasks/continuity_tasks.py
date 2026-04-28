@@ -12,7 +12,7 @@ from app.database import async_session_factory
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(bind=True, name="app.tasks.continuity_tasks.check_character_consistency")
+@celery_app.task(bind=True, name="app.tasks.continuity_tasks.check_character_consistency", queue="continuity")
 def check_character_consistency(
     self,
     project_id: str,
@@ -50,7 +50,7 @@ def check_character_consistency(
     return asyncio.run(_run())
 
 
-@celery_app.task(bind=True, name="app.tasks.continuity_tasks.check_scene_consistency")
+@celery_app.task(bind=True, name="app.tasks.continuity_tasks.check_scene_consistency", queue="continuity")
 def check_scene_consistency(
     self,
     project_id: str,
@@ -88,7 +88,7 @@ def check_scene_consistency(
     return asyncio.run(_run())
 
 
-@celery_app.task(bind=True, name="app.tasks.continuity_tasks.validate_pacing")
+@celery_app.task(bind=True, name="app.tasks.continuity_tasks.validate_pacing", queue="continuity")
 def validate_pacing(
     self,
     project_id: str,

@@ -32,7 +32,7 @@ celery_app.conf.update(
     worker_max_tasks_per_child=100,
     task_acks_late=True,
     task_reject_on_worker_lost=True,
-    task_default_queue="default",
+    task_default_queue="pipeline",
     task_queues={
         "default": {
             "exchange": "default",
@@ -51,7 +51,7 @@ celery_app.conf.update(
             "routing_key": "continuity",
         },
     },
-    task_default_exchange="default",
-    task_default_routing_key="default",
+    task_default_exchange="pipeline",
+    task_default_routing_key="pipeline",
     task_default_delivery_mode="persistent",
 )

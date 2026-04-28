@@ -50,6 +50,80 @@ async def create_character_state(
     return state
 
 
+@router.get("/characters/states", response_model=list[CharacterStateResponse])
+async def list_character_states(
+    project_id: UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取项目的所有角色状态"""
+    if not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required")
+    
+    states = await consistency_manager.list_character_states(
+        db=db,
+        project_id=project_id,
+    )
+    return states
+
+
+@router.get("/characters/states/{state_id}", response_model=CharacterStateResponse)
+async def get_character_state_by_id(
+    state_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """根据ID获取角色状态"""
+    state = await consistency_manager.get_character_state_by_id(
+        db=db,
+        state_id=state_id,
+    )
+    if not state:
+        raise HTTPException(status_code=404, detail="Character state not found")
+    return state
+
+
+@router.put("/characters/states/{state_id}", response_model=CharacterStateResponse)
+async def update_character_state(
+    state_id: UUID,
+    state_data: CharacterStateCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """更新角色状态记录"""
+    state = await consistency_manager.update_character_state(
+        db=db,
+        state_id=state_id,
+        character_name=state_data.character_name,
+        episode_start=state_data.episode_start,
+        episode_end=state_data.episode_end,
+        outfit_description=state_data.outfit_description,
+        hairstyle=state_data.hairstyle,
+        accessories=state_data.accessories,
+        makeup=state_data.makeup,
+        age_appearance=state_data.age_appearance,
+        lora_path=state_data.lora_path,
+        embedding_path=state_data.embedding_path,
+        reference_image_path=state_data.reference_image_path,
+        signature_items=state_data.signature_items,
+        notes=state_data.notes,
+    )
+    await db.commit()
+    await db.refresh(state)
+    return state
+
+
+@router.delete("/characters/states/{state_id}")
+async def delete_character_state(
+    state_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """删除角色状态记录"""
+    await consistency_manager.delete_character_state(
+        db=db,
+        state_id=state_id,
+    )
+    await db.commit()
+    return {"message": "Character state deleted successfully"}
+
+
 @router.get("/characters/states/{project_id}/{character_name}/{episode_number}", response_model=CharacterStateResponse)
 async def get_character_state(
     project_id: UUID,
@@ -91,6 +165,76 @@ async def create_scene_asset(
     await db.commit()
     await db.refresh(asset)
     return asset
+
+
+@router.get("/scenes/assets", response_model=list[SceneAssetResponse])
+async def list_scene_assets(
+    project_id: UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取项目的所有场景资产"""
+    if not project_id:
+        raise HTTPException(status_code=400, detail="project_id is required")
+    
+    assets = await consistency_manager.list_scene_assets(
+        db=db,
+        project_id=project_id,
+    )
+    return assets
+
+
+@router.get("/scenes/assets/{asset_id}", response_model=SceneAssetResponse)
+async def get_scene_asset_by_id(
+    asset_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """根据ID获取场景资产"""
+    asset = await consistency_manager.get_scene_asset_by_id(
+        db=db,
+        asset_id=asset_id,
+    )
+    if not asset:
+        raise HTTPException(status_code=404, detail="Scene asset not found")
+    return asset
+
+
+@router.put("/scenes/assets/{asset_id}", response_model=SceneAssetResponse)
+async def update_scene_asset(
+    asset_id: UUID,
+    asset_data: SceneAssetCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """更新场景资产记录"""
+    asset = await consistency_manager.update_scene_asset(
+        db=db,
+        asset_id=asset_id,
+        scene_name=asset_data.scene_name,
+        scene_type=asset_data.scene_type,
+        description=asset_data.description,
+        layout_description=asset_data.layout_description,
+        lora_path=asset_data.lora_path,
+        controlnet_depth_path=asset_data.controlnet_depth_path,
+        controlnet_edge_path=asset_data.controlnet_edge_path,
+        variants=asset_data.variants,
+        reference_image_path=asset_data.reference_image_path,
+    )
+    await db.commit()
+    await db.refresh(asset)
+    return asset
+
+
+@router.delete("/scenes/assets/{asset_id}")
+async def delete_scene_asset(
+    asset_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """删除场景资产记录"""
+    await consistency_manager.delete_scene_asset(
+        db=db,
+        asset_id=asset_id,
+    )
+    await db.commit()
+    return {"message": "Scene asset deleted successfully"}
 
 
 @router.get("/scenes/assets/{project_id}/{scene_name}", response_model=SceneAssetResponse)

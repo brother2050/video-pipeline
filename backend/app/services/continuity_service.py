@@ -49,6 +49,136 @@ class ConsistencyManager:
         )
         return result.scalar_one_or_none()
 
+    async def list_character_states(
+        self,
+        db: AsyncSession,
+        project_id: UUID,
+    ) -> list[CharacterState]:
+        """
+        获取项目的所有角色状态
+        
+        Args:
+            db: 数据库会话
+            project_id: 项目ID
+            
+        Returns:
+            CharacterState 对象列表
+        """
+        result = await db.execute(
+            select(CharacterState).where(
+                CharacterState.project_id == project_id,
+            ).order_by(CharacterState.character_name, CharacterState.episode_start)
+        )
+        return list(result.scalars().all())
+
+    async def get_character_state_by_id(
+        self,
+        db: AsyncSession,
+        state_id: UUID,
+    ) -> CharacterState | None:
+        """
+        根据ID获取角色状态
+        
+        Args:
+            db: 数据库会话
+            state_id: 角色状态ID
+            
+        Returns:
+            CharacterState 对象，如果不存在则返回 None
+        """
+        result = await db.execute(
+            select(CharacterState).where(
+                CharacterState.id == state_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update_character_state(
+        self,
+        db: AsyncSession,
+        state_id: UUID,
+        character_name: str,
+        episode_start: int,
+        episode_end: int | None = None,
+        outfit_description: str = "",
+        hairstyle: str = "",
+        accessories: dict[str, Any] | None = None,
+        makeup: str = "",
+        age_appearance: str = "",
+        lora_path: str | None = None,
+        embedding_path: str | None = None,
+        reference_image_path: str | None = None,
+        signature_items: dict[str, Any] | None = None,
+        notes: str = "",
+    ) -> CharacterState:
+        """
+        更新角色状态记录
+        
+        Args:
+            db: 数据库会话
+            state_id: 角色状态ID
+            character_name: 角色名称
+            episode_start: 起始集数
+            episode_end: 结束集数（None表示持续到最后一集）
+            outfit_description: 服装描述
+            hairstyle: 发型
+            accessories: 配饰字典
+            makeup: 妆容
+            age_appearance: 年龄外观
+            lora_path: LoRA模型路径
+            embedding_path: Embedding路径
+            reference_image_path: 参考图路径
+            signature_items: 标志性物品
+            notes: 备注
+            
+        Returns:
+            更新后的 CharacterState 对象
+        """
+        result = await db.execute(
+            select(CharacterState).where(CharacterState.id == state_id)
+        )
+        state = result.scalar_one_or_none()
+        
+        if not state:
+            raise ValueError(f"Character state with id {state_id} not found")
+        
+        state.character_name = character_name
+        state.episode_start = episode_start
+        state.episode_end = episode_end
+        state.outfit_description = outfit_description
+        state.hairstyle = hairstyle
+        state.accessories = accessories or {}
+        state.makeup = makeup
+        state.age_appearance = age_appearance
+        state.lora_path = lora_path
+        state.embedding_path = embedding_path
+        state.reference_image_path = reference_image_path
+        state.signature_items = signature_items or {}
+        state.notes = notes
+        
+        await db.flush()
+        return state
+
+    async def delete_character_state(
+        self,
+        db: AsyncSession,
+        state_id: UUID,
+    ) -> None:
+        """
+        删除角色状态记录
+        
+        Args:
+            db: 数据库会话
+            state_id: 角色状态ID
+        """
+        result = await db.execute(
+            select(CharacterState).where(CharacterState.id == state_id)
+        )
+        state = result.scalar_one_or_none()
+        
+        if state:
+            await db.delete(state)
+
     async def create_character_state(
         self,
         db: AsyncSession,
@@ -134,6 +264,124 @@ class ConsistencyManager:
             )
         )
         return result.scalar_one_or_none()
+
+    async def list_scene_assets(
+        self,
+        db: AsyncSession,
+        project_id: UUID,
+    ) -> list[SceneAsset]:
+        """
+        获取项目的所有场景资产
+        
+        Args:
+            db: 数据库会话
+            project_id: 项目ID
+            
+        Returns:
+            SceneAsset 对象列表
+        """
+        result = await db.execute(
+            select(SceneAsset).where(
+                SceneAsset.project_id == project_id,
+            ).order_by(SceneAsset.scene_name)
+        )
+        return list(result.scalars().all())
+
+    async def get_scene_asset_by_id(
+        self,
+        db: AsyncSession,
+        asset_id: UUID,
+    ) -> SceneAsset | None:
+        """
+        根据ID获取场景资产
+        
+        Args:
+            db: 数据库会话
+            asset_id: 场景资产ID
+            
+        Returns:
+            SceneAsset 对象，如果不存在则返回 None
+        """
+        result = await db.execute(
+            select(SceneAsset).where(
+                SceneAsset.id == asset_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update_scene_asset(
+        self,
+        db: AsyncSession,
+        asset_id: UUID,
+        scene_name: str,
+        scene_type: str = "interior",
+        description: str = "",
+        layout_description: str = "",
+        lora_path: str | None = None,
+        controlnet_depth_path: str | None = None,
+        controlnet_edge_path: str | None = None,
+        variants: dict[str, Any] | None = None,
+        reference_image_path: str | None = None,
+    ) -> SceneAsset:
+        """
+        更新场景资产记录
+        
+        Args:
+            db: 数据库会话
+            asset_id: 场景资产ID
+            scene_name: 场景名称
+            scene_type: 场景类型（interior/exterior）
+            description: 场景描述
+            layout_description: 布局描述
+            lora_path: LoRA模型路径
+            controlnet_depth_path: ControlNet深度图路径
+            controlnet_edge_path: ControlNet边缘图路径
+            variants: 时间/天气变体
+            reference_image_path: 参考图路径
+            
+        Returns:
+            更新后的 SceneAsset 对象
+        """
+        result = await db.execute(
+            select(SceneAsset).where(SceneAsset.id == asset_id)
+        )
+        asset = result.scalar_one_or_none()
+        
+        if not asset:
+            raise ValueError(f"Scene asset with id {asset_id} not found")
+        
+        asset.scene_name = scene_name
+        asset.scene_type = scene_type
+        asset.description = description
+        asset.layout_description = layout_description
+        asset.lora_path = lora_path
+        asset.controlnet_depth_path = controlnet_depth_path
+        asset.controlnet_edge_path = controlnet_edge_path
+        asset.variants = variants or {}
+        asset.reference_image_path = reference_image_path
+        
+        await db.flush()
+        return asset
+
+    async def delete_scene_asset(
+        self,
+        db: AsyncSession,
+        asset_id: UUID,
+    ) -> None:
+        """
+        删除场景资产记录
+        
+        Args:
+            db: 数据库会话
+            asset_id: 场景资产ID
+        """
+        result = await db.execute(
+            select(SceneAsset).where(SceneAsset.id == asset_id)
+        )
+        asset = result.scalar_one_or_none()
+        
+        if asset:
+            await db.delete(asset)
 
     async def create_scene_asset(
         self,

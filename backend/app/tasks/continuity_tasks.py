@@ -16,12 +16,16 @@ logger = logging.getLogger(__name__)
 def check_character_consistency(
     self,
     project_id: str,
+    episode_start: int = 1,
+    episode_end: int = 1,
 ) -> dict[str, Any]:
     """
     异步执行角色连续性检查。
     
     Args:
         project_id: 项目ID
+        episode_start: 起始集数（默认1）
+        episode_end: 结束集数（默认1）
     
     Returns:
         检查结果
@@ -35,6 +39,8 @@ def check_character_consistency(
                 result = await consistency_manager.check_character_consistency(
                     db=db,
                     project_id=uuid.UUID(project_id),
+                    episode_start=episode_start,
+                    episode_end=episode_end,
                 )
                 return {
                     "status": "success",
@@ -54,12 +60,16 @@ def check_character_consistency(
 def check_scene_consistency(
     self,
     project_id: str,
+    episode_start: int = 1,
+    episode_end: int = 1,
 ) -> dict[str, Any]:
     """
     异步执行场景连续性检查。
     
     Args:
         project_id: 项目ID
+        episode_start: 起始集数（默认1）
+        episode_end: 结束集数（默认1）
     
     Returns:
         检查结果
@@ -73,6 +83,8 @@ def check_scene_consistency(
                 result = await consistency_manager.check_scene_consistency(
                     db=db,
                     project_id=uuid.UUID(project_id),
+                    episode_start=episode_start,
+                    episode_end=episode_end,
                 )
                 return {
                     "status": "success",
@@ -92,7 +104,7 @@ def check_scene_consistency(
 def validate_pacing(
     self,
     project_id: str,
-    scene_content: dict[str, Any],
+    episode_content: dict[str, Any],
     template_id: str | None = None,
     hook_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -101,7 +113,7 @@ def validate_pacing(
     
     Args:
         project_id: 项目ID
-        scene_content: 场景内容
+        episode_content: 集内容
         template_id: 模板ID（可选）
         hook_config: 钩子配置（可选）
     
@@ -110,20 +122,36 @@ def validate_pacing(
     """
     import asyncio
     from app.services.pacing_service import pacing_engine
+    from app.models.continuity import PacingTemplate
+    from sqlalchemy import select
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             try:
-                result = await pacing_engine.validate_pacing(
-                    db=db,
-                    project_id=uuid.UUID(project_id),
-                    scene_content=scene_content,
-                    template_id=uuid.UUID(template_id) if template_id else None,
-                    hook_config=hook_config,
+                template = None
+                if template_id:
+                    result = await db.execute(
+                        select(PacingTemplate).where(PacingTemplate.id == uuid.UUID(template_id))
+                    )
+                    template = result.scalar_one_or_none()
+                
+                if not template:
+                    return {
+                        "status": "error",
+                        "error": "Template not found",
+                    }
+                
+                passed, errors = await pacing_engine.validate_pacing(
+                    episode_content=episode_content,
+                    template=template,
                 )
+                
                 return {
                     "status": "success",
-                    "validation_result": result,
+                    "validation_result": {
+                        "passed": passed,
+                        "errors": errors,
+                    },
                 }
             except Exception as e:
                 logger.error(f"节奏验证失败: {e}", exc_info=True)

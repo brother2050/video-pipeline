@@ -38,7 +38,7 @@ class OutlineStage(BaseStage):
         
         # 如果有节奏模板，添加节奏指导
         if pacing_template:
-            pacing_guidance = f"\n\n节奏指导：\n{json.dumps(pacing_template.structure, indent=2, ensure_ascii=False)}"
+            pacing_guidance = f"\n\n节奏指导：\n{json.dumps(pacing_template, indent=2, ensure_ascii=False)}"
             base_prompt += pacing_guidance
             
         return base_prompt
@@ -109,7 +109,7 @@ class OutlineStage(BaseStage):
             existing_template.structure = pacing_structure
             existing_template.genre = project.genre
             existing_template.usage_count += 1
-            existing_template.notes = f"从候选 {candidate_id} 更新"
+            existing_template.description = f"从候选 {candidate_id} 更新"
         else:
             # 创建新的节奏模板记录
             pacing_template = PacingTemplate(

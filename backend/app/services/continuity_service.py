@@ -227,7 +227,7 @@ class ConsistencyManager:
             episode_end=episode_end,
             outfit_description=outfit_description,
             hairstyle=hairstyle,
-            accessories=accessures or {},
+            accessories=accessories or {},
             makeup=makeup,
             age_appearance=age_appearance,
             lora_path=lora_path,

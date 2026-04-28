@@ -7,7 +7,7 @@ import uuid
 from typing import Any
 
 from app.celery_app import celery_app
-from app.database import async_session_factory
+from app.database import get_async_session_factory
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ def check_face_recognition(
     from app.services.compliance_service import ComplianceChecker
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             try:
                 result = await ComplianceChecker().check_face_compliance(
                     db, uuid.UUID(project_id), episode_number, stage_type
@@ -77,7 +77,7 @@ def check_music_copyright(
     from app.services.compliance_service import ComplianceChecker
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             try:
                 result = await ComplianceChecker().check_music_compliance(
                     db, uuid.UUID(project_id), episode_number, stage_type
@@ -120,7 +120,7 @@ def check_content_moderation(
     from app.services.compliance_service import ComplianceChecker
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             try:
                 result = await ComplianceChecker().check_content_compliance(
                     db, uuid.UUID(project_id), episode_number, stage_type

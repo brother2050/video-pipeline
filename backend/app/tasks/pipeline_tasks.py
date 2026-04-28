@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.celery_app import celery_app
-from app.database import async_session_factory
+from app.database import get_async_session_factory
 from app.logging_config import AsyncLogger, PipelineLogger
 from app.models import Candidate, Stage
 from app.suppliers.registry import SupplierRegistry
@@ -43,6 +43,7 @@ def generate_candidates(
     """
     import asyncio
     from app.services.pipeline_service import generate_candidates as generate_candidates_service
+    from app.models.project import Project
     
     task_logger = AsyncLogger("generate_candidates")
     pipeline_logger = PipelineLogger(stage_type)
@@ -54,7 +55,7 @@ def generate_candidates(
     pipeline_logger.log_stage_start(project_id)
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             from app.models.project import Project
             
             registry = SupplierRegistry()
@@ -118,6 +119,7 @@ def process_stage(
     """
     import asyncio
     from app.services.pipeline_service import generate_candidates as generate_candidates_service
+    from app.models.project import Project
     
     task_logger = AsyncLogger("process_stage")
     pipeline_logger = PipelineLogger(stage_type)
@@ -128,7 +130,7 @@ def process_stage(
     pipeline_logger.log_stage_start(project_id)
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             from app.models.project import Project
             
             registry = SupplierRegistry()
@@ -190,7 +192,7 @@ def generate_artifact(
         生成的产物信息
     """
     import asyncio
-    from app.services.pipeline_service import generate_candidates as generate_candidates_service
+    from app.models.project import Project
     
     task_logger = AsyncLogger("generate_artifact")
     task_id = str(self.request.id)
@@ -199,7 +201,7 @@ def generate_artifact(
                              candidate_id=candidate_id, artifact_type=artifact_type)
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             from app.models.project import Project
             
             registry = SupplierRegistry()

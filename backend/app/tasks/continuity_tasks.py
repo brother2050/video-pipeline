@@ -7,7 +7,7 @@ import uuid
 from typing import Any
 
 from app.celery_app import celery_app
-from app.database import async_session_factory
+from app.database import get_async_session_factory
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def check_character_consistency(
     from app.services.continuity_service import consistency_manager
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             try:
                 result = await consistency_manager.check_character_consistency(
                     db=db,
@@ -68,7 +68,7 @@ def check_scene_consistency(
     from app.services.continuity_service import consistency_manager
     
     async def _run():
-        async with async_session_factory() as db:
+        async with get_async_session_factory()() as db:
             try:
                 result = await consistency_manager.check_scene_consistency(
                     db=db,

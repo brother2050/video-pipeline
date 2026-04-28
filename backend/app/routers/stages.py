@@ -2,6 +2,7 @@
 阶段路由。
 """
 
+import time
 from typing import Any
 from uuid import UUID
 
@@ -12,6 +13,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.dependencies import get_stage_or_404
+from app.logging_config import APILogger, PipelineLogger
 from app.models.project import Project
 from app.models.stage import Stage
 from app.models.candidate import Candidate, Artifact
@@ -153,6 +155,13 @@ async def generate_candidates(
     db: AsyncSession = Depends(get_db),
 ):
     """异步生成候选内容"""
+    api_logger = APILogger("generate_candidates")
+    pipeline_logger = PipelineLogger(stage_type)
+    start_time = time.time()
+    
+    api_logger.log_request("POST", f"/projects/{project_id}/stages/{stage_type}/generate", 
+                          {"num_candidates": data.num_candidates})
+    
     # 获取项目和阶段
     proj_result = await db.execute(select(Project).where(Project.id == project_id))
     project = proj_result.scalar_one()
@@ -173,6 +182,10 @@ async def generate_candidates(
         prompt=data.prompt or stage.prompt,
         config=data.config or stage.config,
     )
+    
+    duration_ms = (time.time() - start_time) * 1000
+    api_logger.log_response("POST", f"/projects/{project_id}/stages/{stage_type}/generate", 200, duration_ms)
+    pipeline_logger.log_stage_start(str(project_id))
 
     return APIResponse(data={
         "task_id": task.id,
@@ -286,6 +299,13 @@ async def review_stage(
     data: ReviewRequest,
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[StageResponse]:
+    api_logger = APILogger("review_stage")
+    pipeline_logger = PipelineLogger(stage_type)
+    start_time = time.time()
+    
+    api_logger.log_request("POST", f"/projects/{project_id}/stages/{stage_type}/review", 
+                          {"action": data.action, "candidate_id": data.candidate_id})
+    
     stage_result = await db.execute(
         select(Stage).where(Stage.project_id == project_id, Stage.stage_type == stage_type)
     )
@@ -296,6 +316,14 @@ async def review_stage(
         comment=data.comment or "",
     )
     await db.refresh(updated_stage)
+    
+    duration_ms = (time.time() - start_time) * 1000
+    api_logger.log_response("POST", f"/projects/{project_id}/stages/{stage_type}/review", 200, duration_ms)
+    
+    if data.candidate_id:
+        approved = data.action == "approve"
+        pipeline_logger.log_approval_action(str(project_id), data.candidate_id, approved)
+    
     return APIResponse(data=_stage_to_response(updated_stage))
 
 

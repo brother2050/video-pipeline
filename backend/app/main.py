@@ -13,19 +13,29 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import init_db, close_db, async_session_factory
 from app.exceptions import register_exception_handlers
+from app.logging_config import setup_logging, get_logger
 from app.ws.hub import ws_hub
+
+# 初始化日志系统
+setup_logging()
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """应用生命周期管理"""
+    logger.info("Application starting up...")
+    
     # 创建数据目录
     data_dir = Path(settings.data_dir)
     (data_dir / "projects").mkdir(parents=True, exist_ok=True)
     (data_dir / "db").mkdir(parents=True, exist_ok=True)
+    logger.info(f"Data directories created: {data_dir}")
 
     # 初始化数据库
+    logger.info("Initializing database...")
     await init_db()
+    logger.info("Database initialized successfully")
 
     # 初始化供应商注册表
     from sqlalchemy import select
@@ -33,6 +43,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from app.schemas.supplier import CapabilityConfigResponse, SupplierSlot
     from app.suppliers.registry import SupplierRegistry
 
+    logger.info("Initializing supplier registry...")
     registry = SupplierRegistry()
     async with async_session_factory() as db:
         result = await db.execute(select(CapabilityConfig))
@@ -49,13 +60,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 for c in configs
             ]
             await registry.initialize(schema_configs)
+            logger.info(f"Supplier registry initialized with {len(schema_configs)} capabilities")
     app.state.supplier_registry = registry
 
     # 启动 WebSocket 心跳
+    logger.info(f"Starting WebSocket heartbeat with interval: {settings.ws_heartbeat_interval}s")
     await ws_hub.start_heartbeat(settings.ws_heartbeat_interval)
 
     # 启动节点心跳检测
     from app.nodes.heartbeat import HeartbeatManager
+    logger.info(f"Starting node heartbeat manager - interval: {settings.heartbeat_interval_seconds}s, timeout: {settings.heartbeat_timeout_seconds}s")
     heartbeat = HeartbeatManager(
         interval=settings.heartbeat_interval_seconds,
         timeout=settings.heartbeat_timeout_seconds,
@@ -63,12 +77,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await heartbeat.start()
     app.state.heartbeat_manager = heartbeat
 
+    logger.info("Application startup complete")
+
     yield
 
     # 关闭
+    logger.info("Application shutting down...")
     await heartbeat.stop()
+    logger.info("Node heartbeat manager stopped")
     await ws_hub.stop_heartbeat()
+    logger.info("WebSocket heartbeat stopped")
     await close_db()
+    logger.info("Database connection closed")
+    logger.info("Application shutdown complete")
 
 
 app = FastAPI(

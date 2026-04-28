@@ -9,6 +9,10 @@ from typing import Any
 from fastapi import WebSocket
 from pydantic import BaseModel
 
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 class WSConnection:
     """单个 WebSocket 连接的包装"""
@@ -46,6 +50,7 @@ class WebSocketHub:
         async with self._lock:
             conn_id = id(websocket)
             self._connections[conn_id] = WSConnection(websocket)
+            logger.info(f"WebSocket connected - ID: {conn_id}, Total connections: {len(self._connections)}")
             return conn_id
 
     async def disconnect(self, conn_id: int) -> None:
@@ -54,6 +59,7 @@ class WebSocketHub:
             conn = self._connections.pop(conn_id, None)
             if conn:
                 await conn.close()
+                logger.info(f"WebSocket disconnected - ID: {conn_id}, Subscriptions: {len(conn.subscriptions)}, Remaining: {len(self._connections)}")
 
     async def subscribe(self, conn_id: int, project_id: str) -> None:
         """订阅项目消息"""
@@ -61,6 +67,7 @@ class WebSocketHub:
             conn = self._connections.get(conn_id)
             if conn:
                 conn.subscriptions.add(project_id)
+                logger.debug(f"WebSocket subscription - ID: {conn_id}, Project: {project_id}, Total subscriptions: {len(conn.subscriptions)}")
 
     async def unsubscribe(self, conn_id: int, project_id: str) -> None:
         """取消订阅"""
@@ -68,6 +75,7 @@ class WebSocketHub:
             conn = self._connections.get(conn_id)
             if conn:
                 conn.subscriptions.discard(project_id)
+                logger.debug(f"WebSocket unsubscription - ID: {conn_id}, Project: {project_id}, Remaining subscriptions: {len(conn.subscriptions)}")
 
     async def broadcast(self, message: dict[str, Any]) -> None:
         """广播消息给所有连接"""
@@ -76,23 +84,35 @@ class WebSocketHub:
             for conn_id, conn in self._connections.items():
                 try:
                     await conn.send_json(message)
-                except Exception:
+                except Exception as e:
                     dead.append(conn_id)
+                    logger.warning(f"Failed to send message to connection {conn_id}: {e}")
             for conn_id in dead:
                 self._connections.pop(conn_id, None)
+        
+        if dead:
+            logger.info(f"Removed {len(dead)} dead connections during broadcast, remaining: {len(self._connections)}")
 
     async def broadcast_to_project(self, project_id: str, message: dict[str, Any]) -> None:
         """广播消息给订阅了特定项目的连接"""
         dead: list[int] = []
+        recipient_count = 0
         async with self._lock:
             for conn_id, conn in self._connections.items():
                 if project_id in conn.subscriptions:
+                    recipient_count += 1
                     try:
                         await conn.send_json(message)
-                    except Exception:
+                    except Exception as e:
                         dead.append(conn_id)
+                        logger.warning(f"Failed to send message to connection {conn_id} for project {project_id}: {e}")
             for conn_id in dead:
                 self._connections.pop(conn_id, None)
+        
+        logger.debug(f"Broadcast to project {project_id}: {recipient_count} recipients, {len(dead)} failed")
+        
+        if dead:
+            logger.info(f"Removed {len(dead)} dead connections during project broadcast, remaining: {len(self._connections)}")
 
     async def send_to(self, conn_id: int, message: dict[str, Any]) -> None:
         """发送消息给特定连接"""

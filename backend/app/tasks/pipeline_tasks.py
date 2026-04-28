@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.celery_app import celery_app
 from app.database import async_session_factory
+from app.logging_config import AsyncLogger, PipelineLogger
 from app.models import Candidate, Stage
 from app.suppliers.registry import SupplierRegistry
 
@@ -42,6 +43,15 @@ def generate_candidates(
     import asyncio
     from app.services.pipeline_service import generate_candidates as generate_candidates_service
     
+    task_logger = AsyncLogger("generate_candidates")
+    pipeline_logger = PipelineLogger(stage_type)
+    task_id = str(self.request.id)
+    
+    task_logger.log_task_start(task_id, "generate_candidates", 
+                             project_id=project_id, stage_type=stage_type, 
+                             num_candidates=num_candidates)
+    pipeline_logger.log_stage_start(project_id)
+    
     async def _run():
         async with async_session_factory() as db:
             from app.suppliers.registry import SupplierRegistry
@@ -57,6 +67,7 @@ def generate_candidates(
             stage = stage_result.scalar_one()
             
             try:
+                logger.info(f"开始生成候选 - 项目: {project_id}, 阶段: {stage_type}, 数量: {num_candidates}")
                 result = await generate_candidates_service(
                     db=db,
                     project=project,
@@ -66,11 +77,17 @@ def generate_candidates(
                     num_candidates=num_candidates,
                     registry=registry,
                 )
+                candidate_ids = [str(c.id) for c in result]
+                task_logger.log_task_success(task_id, "generate_candidates", {"candidate_count": len(candidate_ids)})
+                pipeline_logger.log_candidate_generation(project_id, len(candidate_ids))
+                logger.info(f"候选生成成功 - 项目: {project_id}, 阶段: {stage_type}, 生成数量: {len(candidate_ids)}")
                 return {
                     "status": "success",
-                    "candidate_ids": [str(c.id) for c in result],
+                    "candidate_ids": candidate_ids,
                 }
             except Exception as e:
+                task_logger.log_task_error(task_id, "generate_candidates", e)
+                pipeline_logger.log_stage_error(project_id, e)
                 logger.error(f"生成候选失败: {e}", exc_info=True)
                 return {
                     "status": "error",
@@ -101,20 +118,34 @@ def process_stage(
     import asyncio
     from app.services.pipeline_service import PipelineService
     
+    task_logger = AsyncLogger("process_stage")
+    pipeline_logger = PipelineLogger(stage_type)
+    task_id = str(self.request.id)
+    
+    task_logger.log_task_start(task_id, "process_stage", 
+                             project_id=project_id, stage_type=stage_type)
+    pipeline_logger.log_stage_start(project_id)
+    
     async def _run():
         async with async_session_factory() as db:
             pipeline_service = PipelineService(db)
             try:
+                logger.info(f"开始处理阶段 - 项目: {project_id}, 阶段: {stage_type}")
                 result = await pipeline_service.process_stage(
                     project_id=uuid.UUID(project_id),
                     stage_type=stage_type,
                     config=config,
                 )
+                task_logger.log_task_success(task_id, "process_stage", result)
+                pipeline_logger.log_stage_complete(project_id, None, result)
+                logger.info(f"阶段处理成功 - 项目: {project_id}, 阶段: {stage_type}")
                 return {
                     "status": "success",
                     "result": result,
                 }
             except Exception as e:
+                task_logger.log_task_error(task_id, "process_stage", e)
+                pipeline_logger.log_stage_error(project_id, e)
                 logger.error(f"处理阶段失败: {e}", exc_info=True)
                 return {
                     "status": "error",
@@ -145,20 +176,30 @@ def generate_artifact(
     import asyncio
     from app.services.pipeline_service import PipelineService
     
+    task_logger = AsyncLogger("generate_artifact")
+    task_id = str(self.request.id)
+    
+    task_logger.log_task_start(task_id, "generate_artifact", 
+                             candidate_id=candidate_id, artifact_type=artifact_type)
+    
     async def _run():
         async with async_session_factory() as db:
             pipeline_service = PipelineService(db)
             try:
+                logger.info(f"开始生成产物 - 候选: {candidate_id}, 类型: {artifact_type}")
                 result = await pipeline_service.generate_artifact(
                     candidate_id=uuid.UUID(candidate_id),
                     artifact_type=artifact_type,
                     config=config,
                 )
+                task_logger.log_task_success(task_id, "generate_artifact", {"artifact_id": str(result.id)})
+                logger.info(f"产物生成成功 - 候选: {candidate_id}, 类型: {artifact_type}, 产物ID: {result.id}")
                 return {
                     "status": "success",
                     "artifact_id": str(result.id),
                 }
             except Exception as e:
+                task_logger.log_task_error(task_id, "generate_artifact", e)
                 logger.error(f"生成产物失败: {e}", exc_info=True)
                 return {
                     "status": "error",

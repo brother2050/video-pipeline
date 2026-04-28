@@ -9,6 +9,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.logging_config import PipelineLogger
 from app.models.stage import Stage
 from app.models.candidate import Candidate
 from app.models.project import Project
@@ -23,6 +24,8 @@ class ReviewGate:
 
     async def approve(self, db: AsyncSession, stage_id: UUID, candidate_id: UUID) -> Stage:
         """通过审核：选中候选 → 锁定阶段 → 触发引擎 advance"""
+        pipeline_logger = PipelineLogger("review_gate")
+        
         stage_result = await db.execute(select(Stage).where(Stage.id == stage_id))
         stage = stage_result.scalar_one_or_none()
         if stage is None:
@@ -43,6 +46,8 @@ class ReviewGate:
         if project is None:
             raise NotFoundError("Project", str(stage.project_id))
 
+        pipeline_logger.log_approval_action(str(stage.project_id), str(candidate_id), True)
+        
         # 根据阶段类型执行特定的集成操作
         stage_type = StageType(stage.stage_type)
         await self._execute_stage_integration(db, stage, candidate, project, stage_type)
@@ -56,6 +61,7 @@ class ReviewGate:
 
         # 推进流水线
         await pipeline_engine.advance(db, stage.project_id)
+        pipeline_logger.log_stage_complete(str(stage.project_id), str(candidate_id))
         return stage
 
     async def _execute_stage_integration(

@@ -285,27 +285,37 @@ class SupplierRegistry:
         """Core dispatch: try by priority, auto-fallback on failure."""
         health_list = self._by_capability.get(capability, [])
         errors: list[str] = []
+        
+        logger.info(f"Executing supplier call - Capability: {capability.value}, Method: {method}, Available suppliers: {len(health_list)}")
 
-        for h in health_list:
+        for idx, h in enumerate(health_list):
             effective_timeout = timeout or h.timeout
+            logger.debug(f"Trying supplier {idx + 1}/{len(health_list)}: {h.supplier.provider_name}, Timeout: {effective_timeout}s")
+            
             try:
                 coro = getattr(h.supplier, method)(**kwargs)
                 result = await asyncio.wait_for(coro, timeout=effective_timeout)
                 h.mark_success()
+                logger.info(f"Supplier call succeeded - Capability: {capability.value}, Supplier: {h.supplier.provider_name}, Attempt: {idx + 1}")
                 return result
             except asyncio.TimeoutError:
                 err = f"{h.supplier.provider_name} timed out ({effective_timeout}s)"
                 h.mark_failure(err)
                 errors.append(err)
+                logger.warning(f"Supplier timeout - Capability: {capability.value}, Supplier: {h.supplier.provider_name}, Timeout: {effective_timeout}s")
             except ConnectionError as e:
                 err = f"{h.supplier.provider_name} connection error: {e}"
                 h.mark_failure(err)
                 errors.append(err)
+                logger.warning(f"Supplier connection error - Capability: {capability.value}, Supplier: {h.supplier.provider_name}, Error: {e}")
             except Exception as e:
                 err = f"{h.supplier.provider_name} error: {e}"
                 h.mark_failure(err)
                 errors.append(err)
+                logger.error(f"Supplier error - Capability: {capability.value}, Supplier: {h.supplier.provider_name}, Error: {e}", exc_info=True)
 
+        error_msg = f"All suppliers exhausted for {capability.value}: {'; '.join(errors)}"
+        logger.error(error_msg)
         raise AllSuppliersExhausted(capability.value, errors)
 
     async def test_supplier(

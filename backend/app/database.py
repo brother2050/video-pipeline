@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from app.config import settings
 
@@ -26,13 +27,12 @@ def _get_engine():
     """
     懒加载创建数据库引擎。
     使用lru_cache确保每个fork出来的worker进程只创建一次Engine，
-    但第一次创建发生在asyncio.run()内部，绑定到正确的事件循环。
+    使用NullPool避免连接绑定到已关闭的event loop。
     """
     return create_async_engine(
         settings.database_url,
         echo=settings.debug,
-        pool_size=5,
-        max_overflow=5,
+        poolclass=NullPool,
     )
 
 

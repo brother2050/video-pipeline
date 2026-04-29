@@ -22,7 +22,7 @@ class StateRecovery:
     """状态恢复工具类"""
     
     # 超时时间：如果阶段在生成中状态超过这个时间，视为异常
-    GENERATING_TIMEOUT_MINUTES = 30
+    GENERATING_TIMEOUT_MINUTES = 5  # 降低到5分钟，让失败状态更快显示
     
     @classmethod
     async def check_and_recover_stuck_stages(cls) -> dict[str, int]:

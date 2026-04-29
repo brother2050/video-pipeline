@@ -85,7 +85,7 @@ export default function StageReview() {
   useEffect(() => {
     if (!stage) return;
 
-    const STUCK_THRESHOLD_MINUTES = 30;
+    const STUCK_THRESHOLD_MINUTES = 5; // 降低到5分钟，让失败状态更快显示
     const now = Date.now();
 
     if (stage.status === StageStatus.GENERATING && stage.updated_at) {

@@ -10,7 +10,9 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['www.fogo.cloud-ip.cc'],
     hmr: {
       path: "/hmr", // ← 关键：把 HMR 的 WebSocket 挪走
     },

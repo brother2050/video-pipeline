@@ -4,6 +4,7 @@
 
 import logging
 import uuid
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -91,6 +92,31 @@ def generate_candidates(
                 task_logger.log_task_error(task_id, "generate_candidates", e)
                 pipeline_logger.log_stage_error(project_id, e)
                 logger.error(f"生成候选失败: {e}", exc_info=True)
+                
+                # 更新阶段状态为失败，让用户能够立即看到
+                try:
+                    from app.schemas.enums import StageStatus
+                    
+                    logger.info(f"开始更新阶段状态为失败 - 项目: {project_id}, 阶段: {stage_type}")
+                    
+                    stage_stmt = select(Stage).where(
+                        Stage.project_id == uuid.UUID(project_id),
+                        Stage.stage_type == stage_type
+                    )
+                    stage_result = await db.execute(stage_stmt)
+                    stage = stage_result.scalar_one_or_none()
+                    
+                    if stage:
+                        logger.info(f"找到阶段，当前状态: {stage.status}")
+                        stage.status = StageStatus.FAILED.value
+                        stage.updated_at = datetime.now()
+                        await db.commit()
+                        logger.info(f"阶段状态已更新为失败 - 项目: {project_id}, 阶段: {stage_type}")
+                    else:
+                        logger.warning(f"未找到阶段 - 项目: {project_id}, 阶段: {stage_type}")
+                except Exception as update_error:
+                    logger.error(f"更新阶段状态失败: {update_error}", exc_info=True)
+                
                 return {
                     "status": "error",
                     "error": str(e),
@@ -165,6 +191,31 @@ def process_stage(
                 task_logger.log_task_error(task_id, "process_stage", e)
                 pipeline_logger.log_stage_error(project_id, e)
                 logger.error(f"处理阶段失败: {e}", exc_info=True)
+                
+                # 更新阶段状态为失败，让用户能够立即看到
+                try:
+                    from app.schemas.enums import StageStatus
+                    
+                    logger.info(f"开始更新阶段状态为失败 - 项目: {project_id}, 阶段: {stage_type}")
+                    
+                    stage_stmt = select(Stage).where(
+                        Stage.project_id == uuid.UUID(project_id),
+                        Stage.stage_type == stage_type
+                    )
+                    stage_result = await db.execute(stage_stmt)
+                    stage = stage_result.scalar_one_or_none()
+                    
+                    if stage:
+                        logger.info(f"找到阶段，当前状态: {stage.status}")
+                        stage.status = StageStatus.FAILED.value
+                        stage.updated_at = datetime.now()
+                        await db.commit()
+                        logger.info(f"阶段状态已更新为失败 - 项目: {project_id}, 阶段: {stage_type}")
+                    else:
+                        logger.warning(f"未找到阶段 - 项目: {project_id}, 阶段: {stage_type}")
+                except Exception as update_error:
+                    logger.error(f"更新阶段状态失败: {update_error}", exc_info=True)
+                
                 return {
                     "status": "error",
                     "error": str(e),
@@ -220,6 +271,36 @@ def generate_artifact(
             except Exception as e:
                 task_logger.log_task_error(task_id, "generate_artifact", e)
                 logger.error(f"生成产物失败: {e}", exc_info=True)
+                
+                # 更新候选状态为失败，让用户能够立即看到
+                try:
+                    from app.schemas.enums import StageStatus
+                    
+                    logger.info(f"开始更新阶段状态为失败 - 候选: {candidate_id}")
+                    
+                    candidate_stmt = select(Candidate).where(Candidate.id == uuid.UUID(candidate_id))
+                    candidate_result = await db.execute(candidate_stmt)
+                    candidate = candidate_result.scalar_one_or_none()
+                    
+                    if candidate and candidate.stage_id:
+                        logger.info(f"找到候选，stage_id: {candidate.stage_id}")
+                        stage_stmt = select(Stage).where(Stage.id == candidate.stage_id)
+                        stage_result = await db.execute(stage_stmt)
+                        stage = stage_result.scalar_one_or_none()
+                        
+                        if stage:
+                            logger.info(f"找到阶段，当前状态: {stage.status}")
+                            stage.status = StageStatus.FAILED.value
+                            stage.updated_at = datetime.now()
+                            await db.commit()
+                            logger.info(f"阶段状态已更新为失败 - 候选: {candidate_id}")
+                        else:
+                            logger.warning(f"未找到阶段 - 候选: {candidate_id}")
+                    else:
+                        logger.warning(f"未找到候选或stage_id - 候选: {candidate_id}")
+                except Exception as update_error:
+                    logger.error(f"更新阶段状态失败: {update_error}", exc_info=True)
+                
                 return {
                     "status": "error",
                     "error": str(e),

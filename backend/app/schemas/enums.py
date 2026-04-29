@@ -24,6 +24,7 @@ class StageStatus(str, Enum):
     REVIEW = "review"
     APPROVED = "approved"
     LOCKED = "locked"
+    FAILED = "failed"
 
 
 class ReviewAction(str, Enum):

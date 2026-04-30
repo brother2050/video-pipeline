@@ -64,7 +64,7 @@ export function CharacterStates() {
       setEditingState(null);
       resetForm();
       refetch();
-    } catch (error) {
+    } catch {
       toast({ 
         title: "错误", 
         description: editingState ? "更新失败" : "创建失败",
@@ -96,7 +96,7 @@ export function CharacterStates() {
         await deleteMutation.mutateAsync(stateId);
         toast({ title: "成功", description: "角色状态已删除" });
         refetch();
-      } catch (error) {
+      } catch {
         toast({ title: "错误", description: "删除失败", variant: "destructive" });
       }
     }
@@ -354,7 +354,7 @@ export function CharacterStates() {
                 )}
                 {state.signature_items && Object.keys(state.signature_items).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {Object.entries(state.signature_items).map(([key, _]) => (
+                    {Object.keys(state.signature_items).map((key) => (
                       <Badge key={key} variant="secondary" className="text-xs">
                         {key}
                       </Badge>

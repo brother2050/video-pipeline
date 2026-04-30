@@ -9,6 +9,16 @@ import { STAGE_LABELS, STAGE_ORDER } from "@/lib/constants";
 import { StageStatus } from "@/types";
 import { StageStatusBadge } from "@/components/shared/StageStatusBadge";
 import { cn } from "@/lib/utils";
+import type { ArtifactResponse, CandidateResponse } from "@/types";
+
+interface GeneratedImage {
+  artifact_id: string;
+  shot_ref: number;
+  prompt_used: string;
+  negative_prompt_used: string;
+  width: number;
+  height: number;
+}
 
 export default function CandidateDetailView() {
   const { id: projectId, stageType, candidateId } = useParams<{
@@ -41,14 +51,15 @@ export default function CandidateDetailView() {
     }
   };
 
-  const handleDownload = async (artifact: any) => {
+  const handleDownload = async (artifact: ArtifactResponse) => {
     try {
       const response = await fetch(`/api/files/${artifact.file_path}`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = artifact.file_path.split('/').pop();
+      const filename = artifact.file_path.split('/').pop();
+      a.download = filename || 'download';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -58,13 +69,13 @@ export default function CandidateDetailView() {
     }
   };
 
-  const getMediaDescription = (artifact: any, candidateData: any) => {
+  const getMediaDescription = (artifact: ArtifactResponse, candidateData: CandidateResponse) => {
     if (!candidateData || !candidateData.content || !candidateData.content.generated_images) {
       return null;
     }
 
-    const generatedImages = candidateData.content.generated_images;
-    const imageData = generatedImages.find((img: any) => img.artifact_id === artifact.id);
+    const generatedImages = candidateData.content.generated_images as GeneratedImage[];
+    const imageData = generatedImages.find((img) => img.artifact_id === artifact.id);
     
     if (!imageData) return null;
 
@@ -77,7 +88,7 @@ export default function CandidateDetailView() {
     };
   };
 
-  const getMediaComponent = (artifact: any) => {
+  const getMediaComponent = (artifact: ArtifactResponse) => {
     const fileType = artifact.file_type;
     
     if (fileType === 'image') {

@@ -64,7 +64,7 @@ export function SceneAssets() {
       setEditingAsset(null);
       resetForm();
       refetch();
-    } catch (error) {
+    } catch {
       toast({ 
         title: "错误", 
         description: editingAsset ? "更新失败" : "创建失败",
@@ -95,7 +95,7 @@ export function SceneAssets() {
         await deleteMutation.mutateAsync(assetId);
         toast({ title: "成功", description: "场景资产已删除" });
         refetch();
-      } catch (error) {
+      } catch {
         toast({ title: "错误", description: "删除失败", variant: "destructive" });
       }
     }
@@ -208,7 +208,7 @@ export function SceneAssets() {
                   <Label htmlFor="scene_type">场景类型 *</Label>
                   <Select
                     value={formData.scene_type}
-                    onValueChange={(value) => setFormData({ ...formData, scene_type: value as any })}
+                    onValueChange={(value) => setFormData({ ...formData, scene_type: value as "interior" | "exterior" | "mixed" })}
                   >
                     <SelectTrigger>
                       <SelectValue />

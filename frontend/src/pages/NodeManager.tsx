@@ -33,12 +33,13 @@ export default function NodeManager() {
   const { data: nodes, isLoading } = useNodes();
   const createMut = useCreateNode();
   const deleteMut = useDeleteNode();
-
+  
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNode, setEditingNode] = useState<NodeResponse | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [healthNodeId, setHealthNodeId] = useState<string | null>(null);
-  const { data: healthData, refetch: checkHealth, isFetching: _healthChecking } = useNodeHealth(healthNodeId || "");
+  const { data: healthData, refetch: checkHealth } = useNodeHealth(healthNodeId || "");
+  const updateMut = useUpdateNode(editingNode?.id || "");
 
   const [form, setForm] = useState<NodeCreate>({
     name: "", host: "127.0.0.1", port: 8000,
@@ -52,7 +53,7 @@ export default function NodeManager() {
 
   const handleSave = async () => {
     if (editingNode) {
-      await useUpdateNode(editingNode.id).mutateAsync(form);
+      await updateMut.mutateAsync(form);
     } else {
       await createMut.mutateAsync(form);
     }
@@ -166,7 +167,7 @@ export default function NodeManager() {
                   <TableCell>
                     <Switch
                       checked={node.status !== NodeStatus.OFFLINE}
-                      onCheckedChange={(_checked) => {
+                      onCheckedChange={() => {
                         // 通过 API 切换
                       }}
                     />

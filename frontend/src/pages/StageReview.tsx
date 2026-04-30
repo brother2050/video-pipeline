@@ -122,7 +122,7 @@ export default function StageReview() {
     }, 2000);
 
     return () => clearInterval(pollInterval);
-  }, [taskId]);
+  }, [taskId, taskStatusMut]);
 
   if (stageLoading || !stage || !id || !stageType) {
     return <div className="text-center py-12 text-muted-foreground">加载中...</div>;

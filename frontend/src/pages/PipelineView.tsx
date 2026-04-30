@@ -15,7 +15,7 @@ import { StageStatusBadge } from "@/components/shared/StageStatusBadge";
 import { ProjectNav } from "@/components/layout/ProjectNav";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { StageStatus, type StageProgressData } from "@/types";
+import { StageStatus, type StageProgressData, type StageType } from "@/types";
 import { CheckCircle, Clock, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,7 +52,7 @@ export default function PipelineView() {
       if (data.project_id === id && data.stage_type && data.progress_current !== undefined && data.progress_total !== undefined) {
         const progressData: StageProgressData = {
           project_id: String(data.project_id),
-          stage_type: data.stage_type as any,
+          stage_type: data.stage_type as StageType,
           progress_current: Number(data.progress_current),
           progress_total: Number(data.progress_total),
           status: String(data.status || "generating")

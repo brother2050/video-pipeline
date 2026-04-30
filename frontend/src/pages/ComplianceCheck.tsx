@@ -12,14 +12,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useComplianceReports, useCheckCompliance } from "@/hooks/useContinuity";
 import { projectApi } from "@/api";
-import type { ComplianceCheckRequest } from "@/types/continuity";
+import type { ComplianceCheckRequest, ComplianceReport } from "@/types/continuity";
+
+interface ViolationItem {
+  type?: string;
+  title?: string;
+  message?: string;
+  description?: string;
+  [key: string]: unknown;
+}
 
 export function ComplianceCheck() {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<ComplianceReport | null>(null);
   const [formData, setFormData] = useState<ComplianceCheckRequest>({
     project_id: projectId!,
     check_type: "face_recognition",
@@ -50,7 +58,7 @@ export function ComplianceCheck() {
       setTimeout(() => {
         refetch();
       }, 2000);
-    } catch (error) {
+    } catch {
       toast({ 
         title: "错误", 
         description: "检查启动失败",
@@ -176,7 +184,7 @@ export function ComplianceCheck() {
                 <Label htmlFor="check_type">检查类型 *</Label>
                 <Select
                   value={formData.check_type}
-                  onValueChange={(value) => setFormData({ ...formData, check_type: value as any })}
+                  onValueChange={(value) => setFormData({ ...formData, check_type: value as ComplianceCheckRequest["check_type"] })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -372,7 +380,7 @@ export function ComplianceCheck() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {Object.entries(selectedReport.violations_detail || {}).map(([key, value]: [string, any]) => (
+                    {Object.entries(selectedReport.violations_detail || {}).map(([key, value]) => (
                       <Card key={key} className="border-destructive">
                         <CardHeader className="pb-3">
                           <div className="flex items-center gap-2">
@@ -383,7 +391,7 @@ export function ComplianceCheck() {
                         <CardContent>
                           <div className="space-y-2 text-sm">
                             {Array.isArray(value) ? (
-                              value.map((item: any, index: number) => (
+                              value.map((item: ViolationItem, index: number) => (
                                 <div key={index} className="p-2 bg-destructive/10 rounded">
                                   <div className="font-medium">{item.type || item.title || "违规"}</div>
                                   <div className="text-muted-foreground">{item.message || item.description}</div>

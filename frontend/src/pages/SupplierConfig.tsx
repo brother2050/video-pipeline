@@ -18,7 +18,7 @@ import { WorkflowUploader } from "@/components/shared/WorkflowUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, TestTube, Save, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { SupplierCapability } from "@/types";
-import type { SupplierSlot, CapabilityConfigResponse, WorkflowAnalysis } from "@/types";
+import type { SupplierSlot, CapabilityConfigResponse } from "@/types";
 
 export default function SupplierConfig() {
   const { data: capabilityLabels } = useCapabilityLabels();
@@ -117,7 +117,7 @@ function CapabilityTab({ capability, config }: { capability: SupplierCapability;
     await testMut.mutateAsync({ capability, slot });
   };
 
-  const handleWorkflowUploaded = (path: string, _analysis: WorkflowAnalysis) => {
+  const handleWorkflowUploaded = (path: string) => {
     setLocalConfig((prev) => ({
       ...prev,
       suppliers: prev.suppliers.map((s) =>

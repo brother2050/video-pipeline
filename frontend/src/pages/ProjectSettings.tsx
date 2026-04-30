@@ -6,8 +6,7 @@
 import { useParams } from "react-router-dom";
 import { useProject, useUpdateProject } from "@/hooks/useProjects";
 import { useProjectSettings, useUpdateProjectSettings } from "@/hooks/useProjects";
-import {
-  useResolutions,
+import { useResolutions,
   useSubtitlePositions,
   useAudioCodecs,
   useVideoBitrates,
@@ -25,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Save } from "lucide-react";
 import { useState, useEffect } from "react";
-import type { ProjectSettingResponse, ProjectSettingUpdate } from "@/types";
+import type { ProjectSettingResponse, ProjectSettingUpdate, ProjectUpdate } from "@/types";
 
 export default function ProjectSettingsPage() {
   const { id } = useParams<{ id: string }>();
@@ -79,7 +78,7 @@ export default function ProjectSettingsPage() {
 
   const handleSave = async () => {
     if (Object.keys(projectForm).length > 0) {
-      await updateProjectMut.mutateAsync(projectForm as any);
+      await updateProjectMut.mutateAsync(projectForm as ProjectUpdate);
     }
     if (Object.keys(form).length > 0) {
       await updateSettingsMut.mutateAsync(form);

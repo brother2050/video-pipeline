@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { usePacingTemplates, useCreatePacingTemplate, useUpdatePacingTemplate, useDeletePacingTemplate, useValidatePacing } from "@/hooks/useContinuity";
 import { projectApi } from "@/api";
-import type { PacingTemplate, PacingTemplateCreate, PacingValidationRequest } from "@/types/continuity";
+import type { PacingTemplate, PacingTemplateCreate, PacingValidationRequest, PacingValidationResult } from "@/types/continuity";
 
 export function PacingTemplates() {
   const { id: projectId } = useParams<{ id: string }>();
@@ -23,7 +23,7 @@ export function PacingTemplates() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PacingTemplate | null>(null);
   const [validateDialogOpen, setValidateDialogOpen] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<PacingValidationResult | null>(null);
   const [formData, setFormData] = useState<Partial<PacingTemplateCreate>>({
     name: "",
     description: "",
@@ -67,7 +67,7 @@ export function PacingTemplates() {
       setEditingTemplate(null);
       resetForm();
       refetch();
-    } catch (error) {
+    } catch {
       toast({ 
         title: "错误", 
         description: editingTemplate ? "更新失败" : "创建失败",
@@ -82,7 +82,7 @@ export function PacingTemplates() {
       const result = await validateMutation.mutateAsync(validateFormData);
       setValidationResult(result);
       toast({ title: "验证完成", description: "节奏验证已完成" });
-    } catch (error) {
+    } catch {
       toast({ title: "错误", description: "验证失败", variant: "destructive" });
     }
   };
@@ -107,7 +107,7 @@ export function PacingTemplates() {
         await deleteMutation.mutateAsync(templateId);
         toast({ title: "成功", description: "节奏模板已删除" });
         refetch();
-      } catch (error) {
+      } catch {
         toast({ title: "错误", description: "删除失败", variant: "destructive" });
       }
     }
@@ -251,7 +251,7 @@ export function PacingTemplates() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {validationResult.issues.map((issue: any, index: number) => (
+                      {validationResult.issues.map((issue, index) => (
                         <div key={index} className="flex items-start gap-2 p-2 bg-muted rounded">
                           {getSeverityIcon(issue.severity)}
                           <div className="flex-1">

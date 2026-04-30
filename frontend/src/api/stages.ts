@@ -12,6 +12,7 @@ import type {
   VersionResponse,
   StageRecoveryRequest,
   StageRecoveryResponse,
+  AsyncTaskResponse,
 } from "@/types";
 
 export const stageApi = {
@@ -40,9 +41,9 @@ export const stageApi = {
     return resp.data as { task_id: string; status: string; message: string };
   },
 
-  getTaskStatus: async (projectId: string, stageType: string, taskId: string): Promise<any> => {
+  getTaskStatus: async (projectId: string, stageType: string, taskId: string): Promise<AsyncTaskResponse> => {
     const resp = await client.get(`/projects/${projectId}/stages/${stageType}/tasks/${taskId}`);
-    return resp.data;
+    return resp.data as AsyncTaskResponse;
   },
 
   listCandidates: async (projectId: string, stageType: string): Promise<CandidateResponse[]> => {

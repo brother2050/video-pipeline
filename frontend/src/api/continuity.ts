@@ -123,9 +123,9 @@ export const continuityApi = {
       return resp.data as AsyncTaskResponse;
     },
 
-    getTaskStatus: async (taskId: string): Promise<any> => {
+    getTaskStatus: async (taskId: string): Promise<AsyncTaskResponse> => {
       const resp = await client.get(`/compliance/tasks/${taskId}`);
-      return resp.data;
+      return resp.data as AsyncTaskResponse;
     },
   },
 

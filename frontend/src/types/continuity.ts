@@ -6,13 +6,13 @@ export interface CharacterState {
   episode_end: number | null;
   outfit_description: string;
   hairstyle: string;
-  accessories: Record<string, any>;
+  accessories: Record<string, unknown>;
   makeup: string;
   age_appearance: string;
   lora_path: string | null;
   embedding_path: string | null;
   reference_image_path: string | null;
-  signature_items: Record<string, any>;
+  signature_items: Record<string, unknown>;
   notes: string;
   created_at: string;
   updated_at: string;
@@ -25,13 +25,13 @@ export interface CharacterStateCreate {
   episode_end?: number | null;
   outfit_description?: string;
   hairstyle?: string;
-  accessories?: Record<string, any>;
+  accessories?: Record<string, unknown>;
   makeup?: string;
   age_appearance?: string;
   lora_path?: string | null;
   embedding_path?: string | null;
   reference_image_path?: string | null;
-  signature_items?: Record<string, any>;
+  signature_items?: Record<string, unknown>;
   notes?: string;
 }
 
@@ -39,13 +39,13 @@ export interface CharacterStateUpdate {
   episode_end?: number | null;
   outfit_description?: string;
   hairstyle?: string;
-  accessories?: Record<string, any>;
+  accessories?: Record<string, unknown>;
   makeup?: string;
   age_appearance?: string;
   lora_path?: string | null;
   embedding_path?: string | null;
   reference_image_path?: string | null;
-  signature_items?: Record<string, any>;
+  signature_items?: Record<string, unknown>;
   notes?: string;
 }
 
@@ -59,7 +59,7 @@ export interface SceneAsset {
   lora_path: string | null;
   controlnet_depth_path: string | null;
   controlnet_edge_path: string | null;
-  variants: Record<string, any>;
+  variants: Record<string, unknown>;
   reference_image_path: string | null;
   created_at: string;
   updated_at: string;
@@ -74,7 +74,7 @@ export interface SceneAssetCreate {
   lora_path?: string | null;
   controlnet_depth_path?: string | null;
   controlnet_edge_path?: string | null;
-  variants?: Record<string, any>;
+  variants?: Record<string, unknown>;
   reference_image_path?: string | null;
 }
 
@@ -86,7 +86,7 @@ export interface SceneAssetUpdate {
   lora_path?: string | null;
   controlnet_depth_path?: string | null;
   controlnet_edge_path?: string | null;
-  variants?: Record<string, any>;
+  variants?: Record<string, unknown>;
   reference_image_path?: string | null;
 }
 
@@ -95,9 +95,9 @@ export interface PacingTemplate {
   name: string;
   description: string;
   genre: string;
-  structure: Record<string, any>;
-  hook_3sec_config: Record<string, any>;
-  cliffhanger_config: Record<string, any>;
+  structure: Record<string, unknown>;
+  hook_3sec_config: Record<string, unknown>;
+  cliffhanger_config: Record<string, unknown>;
   target_duration_sec: number;
   usage_count: number;
   avg_completion_rate: number;
@@ -109,16 +109,16 @@ export interface PacingTemplateCreate {
   name: string;
   description?: string;
   genre?: string;
-  structure?: Record<string, any>;
-  hook_3sec_config?: Record<string, any>;
-  cliffhanger_config?: Record<string, any>;
+  structure?: Record<string, unknown>;
+  hook_3sec_config?: Record<string, unknown>;
+  cliffhanger_config?: Record<string, unknown>;
   target_duration_sec?: number;
 }
 
 export interface PacingValidationRequest {
-  scene_content: Record<string, any>;
+  scene_content: Record<string, unknown>;
   template_id?: string;
-  hook_config?: Record<string, any>;
+  hook_config?: Record<string, unknown>;
 }
 
 export interface PacingValidationResult {
@@ -138,7 +138,7 @@ export interface ComplianceReport {
   stage_type: string | null;
   status: "pending" | "completed" | "failed";
   violations: number;
-  violations_detail: Record<string, any>;
+  violations_detail: Record<string, unknown>;
   checked_at: string;
 }
 
@@ -163,7 +163,7 @@ export interface ConsistencyCheck {
   episode_end: number;
   status: "pending" | "completed" | "failed";
   issues_found: number;
-  issues_detail: Record<string, any>;
+  issues_detail: Record<string, unknown>;
   checked_at: string;
 }
 

@@ -4,7 +4,7 @@
  */
 
 import { useParams } from "react-router-dom";
-import { useProject } from "@/hooks/useProjects";
+import { useProject, useUpdateProject } from "@/hooks/useProjects";
 import { useProjectSettings, useUpdateProjectSettings } from "@/hooks/useProjects";
 import {
   useResolutions,
@@ -31,7 +31,8 @@ export default function ProjectSettingsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: project } = useProject(id || "");
   const { data: settings, isLoading } = useProjectSettings(id || "");
-  const updateMut = useUpdateProjectSettings(id || "");
+  const updateSettingsMut = useUpdateProjectSettings(id || "");
+  const updateProjectMut = useUpdateProject(id || "");
 
   const { data: resolutions } = useResolutions();
   const { data: subtitlePositions } = useSubtitlePositions();
@@ -42,6 +43,7 @@ export default function ProjectSettingsPage() {
   const { data: subtitleColors } = useSubtitleColors();
 
   const [form, setForm] = useState<ProjectSettingUpdate>({});
+  const [projectForm, setProjectForm] = useState<{ target_episodes?: number; target_duration_minutes?: number }>({});
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
@@ -62,12 +64,26 @@ export default function ProjectSettingsPage() {
     setDirty(true);
   };
 
+  const updateProjectField = <K extends keyof { target_episodes?: number; target_duration_minutes?: number }>(key: K, value: { target_episodes?: number; target_duration_minutes?: number }[K]) => {
+    setProjectForm((prev) => ({ ...prev, [key]: value }));
+    setDirty(true);
+  };
+
   const current = <K extends keyof ProjectSettingResponse>(key: K): ProjectSettingResponse[K] => {
     return (form[key as keyof ProjectSettingUpdate] as ProjectSettingResponse[K] | undefined) ?? s[key];
   };
 
+  const currentProject = <K extends keyof { target_episodes?: number; target_duration_minutes?: number }>(key: K): { target_episodes?: number; target_duration_minutes?: number }[K] => {
+    return (projectForm[key] as { target_episodes?: number; target_duration_minutes?: number }[K] | undefined) ?? (project?.[key] as { target_episodes?: number; target_duration_minutes?: number }[K]);
+  };
+
   const handleSave = async () => {
-    await updateMut.mutateAsync(form);
+    if (Object.keys(projectForm).length > 0) {
+      await updateProjectMut.mutateAsync(projectForm as any);
+    }
+    if (Object.keys(form).length > 0) {
+      await updateSettingsMut.mutateAsync(form);
+    }
     setDirty(false);
   };
 
@@ -80,13 +96,36 @@ export default function ProjectSettingsPage() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">项目设置</h1>
-        <Button onClick={handleSave} disabled={!dirty || updateMut.isPending}>
-          {updateMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+        <Button onClick={handleSave} disabled={!dirty || updateSettingsMut.isPending || updateProjectMut.isPending}>
+          {updateSettingsMut.isPending || updateProjectMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
           保存
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* 项目信息 */}
+        <Card className="p-5 space-y-4">
+          <h3 className="font-medium">项目信息</h3>
+          <Separator />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs">目标集数</Label>
+              <Input type="number" min={1} max={100}
+                value={currentProject("target_episodes") || 10}
+                onChange={(e) => updateProjectField("target_episodes", parseInt(e.target.value) || 10)}
+                className="h-8" />
+            </div>
+            <div>
+              <Label className="text-xs">每集时长(分钟)</Label>
+              <Input type="number" min={1} max={180}
+                value={currentProject("target_duration_minutes") || 30}
+                onChange={(e) => updateProjectField("target_duration_minutes", parseInt(e.target.value) || 30)}
+                className="h-8" />
+            </div>
+          </div>
+        </Card>
 
         {/* 生成默认值 */}
         <Card className="p-5 space-y-4">

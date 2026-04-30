@@ -25,10 +25,12 @@ class ScriptStage(BaseStage):
     def build_prompt(self, project: Project, previous_contents: dict[str, Any]) -> str:
         outline = previous_contents
         episodes_json = json.dumps(outline.get("episodes", []), indent=2, ensure_ascii=False)
+        episode_count = len(outline.get("episodes", []))
         return SCRIPT_TEMPLATE.format(
             world_bible=previous_contents.get("world_bible_summary", ""),
             characters_json=json.dumps(previous_contents.get("characters", []), indent=2, ensure_ascii=False),
             current_episode=episodes_json,
+            episode_count=episode_count,
             schema=json.dumps(SCRIPT_SCHEMA, indent=2, ensure_ascii=False),
             example=SCRIPT_EXAMPLE,
         )

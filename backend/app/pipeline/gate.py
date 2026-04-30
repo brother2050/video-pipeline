@@ -31,7 +31,8 @@ class ReviewGate:
         if stage is None:
             raise NotFoundError("Stage", str(stage_id))
 
-        if stage.status not in (StageStatus.REVIEW.value, StageStatus.READY.value):
+        # 允许在 REVIEW、READY、FAILED 状态下审核
+        if stage.status not in (StageStatus.REVIEW.value, StageStatus.READY.value, StageStatus.FAILED.value):
             raise ConflictError(f"Stage {stage.stage_type} is in status '{stage.status}', cannot approve")
 
         # 验证候选存在
